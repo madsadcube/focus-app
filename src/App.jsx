@@ -1160,66 +1160,88 @@ function TaskLine({ task: t, onToggle, onOpen, showClient, isOpen, onSetStatus, 
   const due = fmtDue(t.due);
   const done = t.status === "done";
 
-  const meta = [
-    showClient && t.client ? t.client : null,
-    area ? area.label : null,
-    due ? due.label : null,
-  ].filter(Boolean);
-
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setStatusOpen(false); }}
-      style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 10px 9px 6px", borderRadius: 6, background: selected ? "#eef2ff" : isOpen ? "#f0ece8" : hover ? "#f7f3ef" : "transparent", transition: "background 0.1s", cursor: "default", position: "relative" }}>
+      style={{ display: "flex", alignItems: "center", padding: "0 12px 0 8px", minHeight: 36, background: selected ? "#eef2ff" : isOpen ? "#f5f6ff" : hover ? "#f8f9fb" : "#fff", transition: "background 0.08s", cursor: "default", position: "relative" }}>
 
-      {/* Checkbox (multi-select) — only visible on hover or when selected */}
-      {onSelect && (
-        <div style={{ flexShrink: 0, paddingTop: 2, width: 16 }}>
+      {/* Checkbox — hover/selected */}
+      <div style={{ width: 28, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {onSelect ? (
           <button onClick={() => onSelect(t.id)} title={selected ? "Fravælg" : "Vælg"}
-            style={{ width: 16, height: 16, borderRadius: 4, border: selected ? "none" : `1.5px solid ${hover || selected ? "#6366f1" : "#d4cfc9"}`, background: selected ? "#6366f1" : hover ? "#ede9fe" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", opacity: selected || hover ? 1 : 0 }}>
-            {selected && <span style={{ color: "#fff", fontSize: 8, fontWeight: 900 }}>✓</span>}
+            style={{ width: 15, height: 15, borderRadius: 3, border: selected ? "none" : `1.5px solid ${hover ? "#a5b4fc" : "#d1d5db"}`, background: selected ? "#6366f1" : hover ? "#eef2ff" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.12s", opacity: selected || hover ? 1 : 0, flexShrink: 0 }}>
+            {selected && <span style={{ color: "#fff", fontSize: 8, fontWeight: 900, lineHeight: 1 }}>✓</span>}
           </button>
-        </div>
-      )}
-
-      {/* Status button — only shown when NOT in select mode */}
-      {!onSelect && (
-        <div style={{ position: "relative", flexShrink: 0, paddingTop: 2 }}>
-          <button onClick={() => onSetStatus ? setStatusOpen(!statusOpen) : onToggle(t.id)}
-            title={status.label}
-            style={{ width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${done ? status.color : "#d4cfc9"}`, background: done ? status.color : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
-            {done && <span style={{ color: "#fff", fontSize: 8, fontWeight: 900 }}>✓</span>}
-            {t.status === "in-progress" && !done && <span style={{ fontSize: 8, color: status.color }}>◑</span>}
-            {t.status === "waiting" && !done && <span style={{ fontSize: 8, color: status.color }}>◷</span>}
-          </button>
-          {statusOpen && onSetStatus && (
-            <div style={{ position: "absolute", left: 0, top: "100%", marginTop: 4, background: "#fff", border: "1px solid #e8e3dc", borderRadius: 8, boxShadow: "0 4px 20px rgba(0,0,0,0.08)", zIndex: 200, minWidth: 150, padding: 4 }}>
-              {Object.entries(STATUSES).map(([k, s]) => (
-                <button key={k} onClick={() => { onSetStatus(t.id, k); setStatusOpen(false); }}
-                  style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "7px 10px", fontSize: 12, border: "none", background: t.status === k ? "#f5f1eb" : "none", cursor: "pointer", fontFamily: "inherit", borderRadius: 5, color: "#1e1f21", fontWeight: t.status === k ? 600 : 400 }}>
-                  <span style={{ color: s.color }}>{s.icon}</span><span>{s.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Two-line content */}
-      <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => onOpen && onOpen(t.id)}>
-        <div style={{ fontSize: 14, color: done ? "#b8bfcc" : "#1e1f21", textDecoration: done ? "line-through" : "none", lineHeight: 1.4, fontWeight: 400, display: "flex", alignItems: "center", gap: 6 }}>
-          {t.title}
-          {flag && <span style={{ fontSize: 10, color: flag.color, fontWeight: 700, flexShrink: 0 }}>{flag.label}</span>}
-        </div>
-        {meta.length > 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-            {showClient && t.client && <><span style={{ fontSize: 11, color: "#9ca3af" }}>{t.client}</span><span style={{ color: "#d4cfc9", fontSize: 10 }}>·</span></>}
-            {area && <span style={{ fontSize: 11, color: area.color + "bb" }}>{area.label}</span>}
-            {due && <><span style={{ color: "#d4cfc9", fontSize: 10 }}>·</span><span style={{ fontSize: 11, color: due.color }}>{due.label}</span></>}
+        ) : (
+          <div style={{ width: 15, height: 15, opacity: hover ? 1 : 0, transition: "opacity 0.12s" }}>
+            <button onClick={() => onSelect ? onSelect(t.id) : null}
+              style={{ width: 15, height: 15, borderRadius: 3, border: "1.5px solid #d1d5db", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} />
           </div>
         )}
       </div>
 
-      {t.log?.length > 0 && hover && <span style={{ fontSize: 10, color: "#d4cfc9", flexShrink: 0 }}>💬 {t.log.length}</span>}
-      {onSnooze && hover && !done && <SnoozeButton taskId={t.id} onSnooze={onSnooze} />}
+      {/* Status circle */}
+      <div style={{ position: "relative", flexShrink: 0, marginRight: 8 }}>
+        <button onClick={() => onSetStatus ? setStatusOpen(!statusOpen) : onToggle(t.id)}
+          title={status.label}
+          style={{ width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${done ? status.color : hover ? status.color + "80" : "#d1d5db"}`, background: done ? status.color : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.12s", flexShrink: 0 }}>
+          {done && <span style={{ color: "#fff", fontSize: 8, fontWeight: 900 }}>✓</span>}
+          {t.status === "in-progress" && !done && <span style={{ fontSize: 8, color: status.color }}>◑</span>}
+          {t.status === "waiting" && !done && <span style={{ fontSize: 8, color: status.color }}>◷</span>}
+        </button>
+        {statusOpen && onSetStatus && (
+          <div style={{ position: "absolute", left: 0, top: "100%", marginTop: 4, background: "#fff", border: "1px solid #e8ecf0", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.10)", zIndex: 200, minWidth: 160, padding: 6 }}>
+            {Object.entries(STATUSES).map(([k, s]) => (
+              <button key={k} onClick={() => { onSetStatus(t.id, k); setStatusOpen(false); }}
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "7px 10px", fontSize: 12, border: "none", background: t.status === k ? "#f5f6ff" : "none", cursor: "pointer", fontFamily: "inherit", borderRadius: 6, color: "#1e1f21", fontWeight: t.status === k ? 600 : 400, transition: "background 0.1s" }}
+                onMouseEnter={(e) => { if (t.status !== k) e.currentTarget.style.background = "#f8f9fb"; }}
+                onMouseLeave={(e) => { if (t.status !== k) e.currentTarget.style.background = "none"; }}>
+                <span style={{ color: s.color, fontSize: 13 }}>{s.icon}</span><span>{s.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Title */}
+      <div style={{ flex: 1, minWidth: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, padding: "8px 0" }} onClick={() => onOpen && onOpen(t.id)}>
+        <span style={{ fontSize: 13, color: done ? "#b8bfcc" : "#1e1f21", textDecoration: done ? "line-through" : "none", fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {t.title}
+        </span>
+        {flag && <span style={{ fontSize: 10, color: flag.color, background: flag.color + "12", borderRadius: 4, padding: "1px 6px", fontWeight: 700, flexShrink: 0, border: `1px solid ${flag.color}25` }}>{flag.label}</span>}
+        {t.subtasks?.length > 0 && <span style={{ fontSize: 10, color: "#9ca3af", flexShrink: 0 }}>↳ {t.subtasks.filter(s => s.status === "done").length}/{t.subtasks.length}</span>}
+      </div>
+
+      {/* Hover actions */}
+      {hover && !done && (
+        <div style={{ display: "flex", alignItems: "center", gap: 2, marginRight: 8, flexShrink: 0 }}>
+          {onSnooze && <SnoozeButton taskId={t.id} onSnooze={onSnooze} compact />}
+        </div>
+      )}
+
+      {/* Client column */}
+      {showClient && (
+        <div style={{ width: 120, flexShrink: 0, fontSize: 11, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {t.client || ""}
+        </div>
+      )}
+
+      {/* Due date column */}
+      <div style={{ width: 110, flexShrink: 0 }}>
+        {due ? (
+          <span style={{ fontSize: 11, color: due.color, fontWeight: 500 }}>{due.label}</span>
+        ) : (
+          <span style={{ fontSize: 13, color: hover ? "#d1d5db" : "transparent" }}>📅</span>
+        )}
+      </div>
+
+      {/* Area column */}
+      <div style={{ width: 90, flexShrink: 0 }}>
+        {area ? (
+          <span style={{ fontSize: 11, color: area.color, background: area.color + "12", borderRadius: 4, padding: "2px 7px", fontWeight: 600 }}>{area.label}</span>
+        ) : (
+          <span style={{ fontSize: 13, color: hover ? "#d1d5db" : "transparent" }}>🏷</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -1327,15 +1349,35 @@ function TasksByAreaView({ tasks, onToggle, onOpenTask, openTaskId, showClient, 
 function TaskGroup({ label, color, tasks, onToggle, onOpenTask, openTaskId, showClient, collapsed: initCollapsed, onSetStatus, onSnooze, selectedIds, onSelect }) {
   const [open, setOpen] = useState(!initCollapsed);
   return (
-    <div style={{ marginBottom: 20 }}>
+    <div style={{ marginBottom: 28 }}>
+      {/* Group header */}
       <button onClick={() => setOpen(!open)}
-        style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "10px 6px 6px 6px", marginBottom: 0, width: "100%" }}>
-        <span style={{ width: 10, height: 10, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
-        <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1e1f21" }}>{label}</span>
-        <span style={{ fontSize: 13, color: "#9ca3af", fontWeight: 400 }}>{tasks.length}</span>
-        <span style={{ fontSize: 10, color: "#b8bfcc", marginLeft: "auto", transform: open ? "rotate(90deg)" : "rotate(0deg)", display: "inline-block", transition: "transform 0.15s" }}>▶</span>
+        style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "6px 4px", width: "100%", marginBottom: 4 }}>
+        <span style={{ fontSize: 9, color: "#b8bfcc", transform: open ? "rotate(90deg)" : "rotate(0deg)", display: "inline-block", transition: "transform 0.15s", marginRight: 2 }}>▶</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: "0.4px", textTransform: "uppercase" }}>{label}</span>
+        <span style={{ fontSize: 11, color: "#b8bfcc", fontWeight: 500, background: "#f1f5f9", borderRadius: 99, padding: "1px 7px" }}>{tasks.length}</span>
+        <span style={{ fontSize: 10, color: "#d1d5db" }}>···</span>
+        <span style={{ fontSize: 10, color: "#d1d5db" }}>+</span>
       </button>
-      {open && tasks.map((t) => <TaskLine key={t.id} task={t} onToggle={onToggle} onOpen={onOpenTask} showClient={showClient} isOpen={openTaskId === t.id} onSetStatus={onSetStatus} onSnooze={onSnooze} selected={selectedIds?.includes(t.id)} onSelect={onSelect} />)}
+      {open && (
+        <div style={{ background: "#fff", border: "1px solid #e8ecf0", borderRadius: 10, overflow: "hidden" }}>
+          {/* Column headers */}
+          <div style={{ display: "flex", alignItems: "center", padding: "6px 12px 6px 40px", borderBottom: "1px solid #f1f3f5", gap: 0 }}>
+            <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: "#9ca3af", letterSpacing: "0.2px" }}>Navn</span>
+            {showClient && <span style={{ width: 120, fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>Klient</span>}
+            <span style={{ width: 110, fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>Deadline</span>
+            <span style={{ width: 90, fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>Område</span>
+          </div>
+          {tasks.map((t, i) => (
+            <div key={t.id} style={{ borderTop: i > 0 ? "1px solid #f5f6f8" : "none" }}>
+              <TaskLine task={t} onToggle={onToggle} onOpen={onOpenTask} showClient={showClient} isOpen={openTaskId === t.id} onSetStatus={onSetStatus} onSnooze={onSnooze} selected={selectedIds?.includes(t.id)} onSelect={onSelect} />
+            </div>
+          ))}
+          {tasks.length === 0 && (
+            <div style={{ padding: "14px 40px", fontSize: 12, color: "#b8bfcc" }}>Ingen opgaver</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
