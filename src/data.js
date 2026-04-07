@@ -107,3 +107,8 @@ export const INIT_RETAINERS = [
   { id: 6, client: "Xpertens",          monthlyFee: 3000, currency: "DKK", services: ["google-ads"],         hoursIncluded: null, status: "active", billingDay: 1, startDate: "2025-01-01", notes: "", expenses: [] },
   { id: 7, client: "AlfaRehab",         monthlyFee: 3000, currency: "DKK", services: ["google-ads"],         hoursIncluded: null, status: "active", billingDay: 1, startDate: "2026-01-01", notes: "", expenses: [] },
 ];
+
+export const INIT_PROJECTS = [
+  { id: 1, title: "Webshop launch", client: "Cardirect", color: "#ef4444", status: "active", due: "2026-04-30", description: "ePay integration, produktsider og Google Ads kampagne." },
+];
+

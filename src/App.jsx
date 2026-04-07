@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AREAS, FLAGS, STATUSES, OWN_COMPANIES, CLIENTS, ALL_WORKSPACES, INIT_GOALS, INIT_TASKS, INIT_ROUTINES, INIT_SEO_PAGES, INIT_RETAINERS } from "./data.js";
+import { AREAS, FLAGS, STATUSES, OWN_COMPANIES, CLIENTS, ALL_WORKSPACES, INIT_GOALS, INIT_TASKS, INIT_ROUTINES, INIT_SEO_PAGES, INIT_RETAINERS, INIT_PROJECTS } from "./data.js";
 
 const nowISO = () => new Date().toISOString();
 const fmtDate = (iso) => {
@@ -35,6 +35,7 @@ export default function App() {
   const [clientFilter, setClientFilter] = useState(null);
   const [clientSubNav, setClientSubNav] = useState("issues");
   const [goals, setGoals]               = useState(INIT_GOALS);
+  const [projects, setProjects]         = useState(INIT_PROJECTS);
   const [tasks, setTasks]               = useState(INIT_TASKS);
   const [routines, setRoutines]         = useState(INIT_ROUTINES);
   const [seoPages, setSeoPages]         = useState(INIT_SEO_PAGES);
@@ -56,9 +57,11 @@ export default function App() {
   const [search, setSearch]             = useState("");
   const [newTitle, setNewTitle]         = useState("");
   const [newGoalId, setNewGoalId]       = useState("");
+  const [newProjectId, setNewProjectId] = useState("");
   const [newArea, setNewArea]           = useState("admin");
   const [newClient, setNewClient]       = useState("");
   const [newDue, setNewDue]             = useState("");
+  const [newNotes, setNewNotes]         = useState("");
   const [selectedIds, setSelectedIds]   = useState([]);
   const [bulkDate, setBulkDate]         = useState("");
 
@@ -71,8 +74,8 @@ export default function App() {
 
   const addTask = () => {
     if (!newTitle.trim()) return;
-    setTasks((p) => [...p, { id: Date.now(), title: newTitle.trim(), goalId: newGoalId ? Number(newGoalId) : null, area: newArea, flag: null, priority: null, client: newClient, status: "todo", due: newDue, notes: "", log: [], subtasks: [], snoozedUntil: null }]);
-    setNewTitle(""); setNewGoalId(""); setNewArea("admin"); setNewClient(""); setNewDue("");
+    setTasks((p) => [...p, { id: Date.now(), title: newTitle.trim(), goalId: newGoalId ? Number(newGoalId) : null, projectId: newProjectId ? Number(newProjectId) : null, area: newArea, flag: null, priority: null, client: newClient, status: "todo", due: newDue, notes: newNotes, log: [], subtasks: [], snoozedUntil: null }]);
+    setNewTitle(""); setNewGoalId(""); setNewProjectId(""); setNewArea("admin"); setNewClient(""); setNewDue(""); setNewNotes("");
     setAdding(false);
   };
 
@@ -288,7 +291,7 @@ export default function App() {
         <div style={{ flex: 1, overflow: "auto" }}>
 
           {adding && (
-            <AddModal goals={goals} newTitle={newTitle} setNewTitle={setNewTitle} newGoalId={newGoalId} setNewGoalId={setNewGoalId} newArea={newArea} setNewArea={setNewArea} newClient={newClient} setNewClient={setNewClient} newDue={newDue} setNewDue={setNewDue} onAdd={addTask} onClose={() => setAdding(false)} clientFilter={clientFilter} />
+            <AddModal goals={goals} projects={projects} newTitle={newTitle} setNewTitle={setNewTitle} newGoalId={newGoalId} setNewGoalId={setNewGoalId} newProjectId={newProjectId} setNewProjectId={setNewProjectId} newArea={newArea} setNewArea={setNewArea} newClient={newClient} setNewClient={setNewClient} newDue={newDue} setNewDue={setNewDue} newNotes={newNotes} setNewNotes={setNewNotes} onAdd={addTask} onClose={() => setAdding(false)} clientFilter={clientFilter} />
           )}
 
           {search.trim() ? (
@@ -585,7 +588,7 @@ function TaskPanel({ task: t, goals, width, onResize, onSave, onAddLog, onAddSub
             <select value={goalId} onChange={(e) => set(setGoalId)(e.target.value)}
               style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%", fontSize: 16 }}>
               <option value="">— Ad hoc</option>
-              {goals.map((g) => <option key={g.id} value={g.id}>{g.emoji} {g.title}</option>)}
+              {goals.filter((g) => !t.client || g.client === t.client).map((g) => <option key={g.id} value={g.id}>{g.emoji} {g.title}</option>)}
             </select>
           </div>
 
@@ -2001,49 +2004,92 @@ function RoutineRow({ routine: r, onDone }) {
 
 // ─── ADD MODAL ────────────────────────────────────────────────────────────────
 
-function AddModal({ goals, newTitle, setNewTitle, newGoalId, setNewGoalId, newArea, setNewArea, newClient, setNewClient, newDue, setNewDue, onAdd, onClose, clientFilter }) {
+function AddModal({ goals, projects, newTitle, setNewTitle, newGoalId, setNewGoalId, newProjectId, setNewProjectId, newArea, setNewArea, newClient, setNewClient, newDue, setNewDue, newNotes, setNewNotes, onAdd, onClose, clientFilter }) {
   const effectiveClient = clientFilter || newClient;
+  const filteredGoals = goals.filter((g) => !effectiveClient || g.client === effectiveClient);
+  const filteredProjects = projects.filter((p) => !effectiveClient || p.client === effectiveClient);
+
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(2px)" }} onClick={onClose}>
-      <div style={{ background: "#fff", borderRadius: 14, padding: "24px", width: 460, boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+      <div style={{ background: "#fff", borderRadius: 16, padding: "24px", width: 500, boxShadow: "0 24px 80px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
           <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, flex: 1 }}>Ny opgave</h3>
           {clientFilter && (
             <span style={{ fontSize: 11, fontWeight: 600, color: "#6366f1", background: "#eef2ff", borderRadius: 100, padding: "3px 10px", border: "1px solid #e0e7ff" }}>
               {clientFilter}
             </span>
           )}
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#b8bfcc", lineHeight: 1, padding: "0 2px" }}>×</button>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <input autoFocus style={{ border: "1.5px solid #6366f1", borderRadius: 8, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none" }}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Titel */}
+          <input autoFocus style={{ border: "1.5px solid #6366f1", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", outline: "none", fontWeight: 500 }}
             placeholder="Opgavetitel..." value={newTitle} onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && onAdd()} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <div><label style={LABEL}>MÅL</label>
-              <select value={newGoalId} onChange={(e) => setNewGoalId(e.target.value)} style={SELECT}>
-                <option value="">— Ad hoc</option>
-                {goals.map((g) => <option key={g.id} value={g.id}>{g.emoji} {g.title}</option>)}
-              </select>
-            </div>
-            <div><label style={LABEL}>OMRÅDE</label>
+
+          {/* Beskrivelse */}
+          <textarea style={{ border: "1.5px solid #e3e6ea", borderRadius: 9, padding: "10px 13px", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "none", lineHeight: 1.6, minHeight: 72, color: "#374151" }}
+            placeholder="Beskrivelse, links, context..." value={newNotes} onChange={(e) => setNewNotes(e.target.value)}
+            onFocus={(e) => e.target.style.borderColor = "#a5b4fc"}
+            onBlur={(e) => e.target.style.borderColor = "#e3e6ea"} />
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {/* Område */}
+            <div>
+              <label style={LABEL}>OMRÅDE</label>
               <select value={newArea} onChange={(e) => setNewArea(e.target.value)} style={SELECT}>
                 {Object.entries(AREAS).map(([k, { label }]) => <option key={k} value={k}>{label}</option>)}
               </select>
             </div>
+
+            {/* Deadline */}
+            <div>
+              <label style={LABEL}>DEADLINE</label>
+              <input type="date" style={SELECT} value={newDue} onChange={(e) => setNewDue(e.target.value)} />
+            </div>
+
+            {/* Klient (kun hvis ikke allerede valgt) */}
             {!clientFilter && (
-              <div><label style={LABEL}>KLIENT</label>
-                <input style={{ ...SELECT, border: "1px solid #e3e6ea" }} placeholder="Fx Cardirect" value={newClient} onChange={(e) => setNewClient(e.target.value)} />
+              <div>
+                <label style={LABEL}>KLIENT</label>
+                <select value={newClient} onChange={(e) => setNewClient(e.target.value)} style={SELECT}>
+                  <option value="">— Ingen</option>
+                  {ALL_WORKSPACES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
             )}
-            <div style={clientFilter ? {} : {}}><label style={LABEL}>DEADLINE</label>
-              <input type="date" style={SELECT} value={newDue} onChange={(e) => setNewDue(e.target.value)} />
+
+            {/* Projekt */}
+            {filteredProjects.length > 0 && (
+              <div>
+                <label style={LABEL}>PROJEKT</label>
+                <select value={newProjectId} onChange={(e) => setNewProjectId(e.target.value)} style={SELECT}>
+                  <option value="">— Intet projekt</option>
+                  {filteredProjects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+                </select>
+              </div>
+            )}
+
+            {/* Mål (filtreret til kunde) */}
+            <div style={{ gridColumn: filteredProjects.length > 0 ? "auto" : "span 2" }}>
+              <label style={LABEL}>MÅL</label>
+              <select value={newGoalId} onChange={(e) => setNewGoalId(e.target.value)} style={SELECT}>
+                <option value="">— Ad hoc</option>
+                {filteredGoals.map((g) => <option key={g.id} value={g.id}>{g.emoji} {g.title}</option>)}
+              </select>
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
+
+        <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
           <button onClick={() => { if (clientFilter) setNewClient(clientFilter); onAdd(); }}
-            style={{ flex: 1, background: "#1e293b", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Tilføj</button>
-          <button onClick={onClose} style={{ background: "none", border: "1px solid #e3e6ea", borderRadius: 8, padding: "10px 16px", fontSize: 13, cursor: "pointer", fontFamily: "inherit", color: "#5e6470" }}>Annuller</button>
+            style={{ flex: 1, background: "#1e293b", color: "#fff", border: "none", borderRadius: 9, padding: "11px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.1px" }}>
+            Tilføj opgave
+          </button>
+          <button onClick={onClose} style={{ background: "none", border: "1.5px solid #e3e6ea", borderRadius: 9, padding: "11px 16px", fontSize: 13, cursor: "pointer", fontFamily: "inherit", color: "#5e6470" }}>
+            Annuller
+          </button>
         </div>
       </div>
     </div>
