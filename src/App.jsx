@@ -442,7 +442,7 @@ function TaskPanel({ task: t, goals, width, onResize, onSave, onAddLog, onAddSub
       <div style={{ height: 3, background: `linear-gradient(90deg, ${areaColor}, ${areaColor}88)`, flexShrink: 0 }} />
 
       {/* Header */}
-      <div style={{ padding: "10px 12px 10px 18px", borderBottom: "1px solid #eaecf0", display: "flex", alignItems: "center", gap: 6, background: "#fdfcfb" }}>
+      <div style={{ padding: "10px 12px 10px 18px", borderBottom: "1px solid #eaecf0", display: "flex", alignItems: "center", gap: 6, background: "#ffffff" }}>
         <button onClick={onToggle}
           style={{ width: 20, height: 20, borderRadius: "50%", border: done ? "none" : `2px solid ${areaColor}`, background: done ? areaColor : "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
           {done && <span style={{ color: "#fff", fontSize: 10, fontWeight: 900 }}>✓</span>}
@@ -718,7 +718,7 @@ function TaskPanel({ task: t, goals, width, onResize, onSave, onAddLog, onAddSub
   }
 
   return (
-    <div style={{ width, flexShrink: 0, borderLeft: "1px solid #e8e3dc", background: "#fff", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "-6px 0 24px rgba(0,0,0,0.06)", position: "relative" }}>
+    <div style={{ width, flexShrink: 0, borderLeft: "1px solid #e8ecf0", background: "#fff", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "-6px 0 24px rgba(0,0,0,0.06)", position: "relative" }}>
       {/* Drag handle */}
       <div onMouseDown={onDragStart}
         style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, cursor: "col-resize", zIndex: 10, background: "transparent" }}
@@ -736,15 +736,15 @@ function SnoozeButton({ taskId, onSnooze }) {
   return (
     <div style={{ position: "relative", flexShrink: 0 }}>
       <button onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        style={{ fontSize: 11, color: "#9ca3af", border: "1px solid #e8e3dc", borderRadius: 5, padding: "2px 8px", cursor: "pointer", background: "#fff", fontFamily: "inherit" }}>
+        style={{ fontSize: 11, color: "#9ca3af", border: "1px solid #e8ecf0", borderRadius: 5, padding: "2px 8px", cursor: "pointer", background: "#fff", fontFamily: "inherit" }}>
         💤
       </button>
       {open && (
-        <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 4, background: "#fff", border: "1px solid #e8e3dc", borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", zIndex: 300, padding: 4, minWidth: 110 }}>
+        <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 4, background: "#fff", border: "1px solid #e8ecf0", borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", zIndex: 300, padding: 4, minWidth: 110 }}>
           {[["I morgen", 1], ["3 dage", 3], ["1 uge", 7], ["2 uger", 14]].map(([label, days]) => (
             <button key={days} onClick={(e) => { e.stopPropagation(); onSnooze(taskId, days); setOpen(false); }}
               style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 10px", fontSize: 12, border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", borderRadius: 5, color: "#1e1f21" }}
-              onMouseEnter={(e) => e.currentTarget.style.background = "#f7f3ef"}
+              onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
               onMouseLeave={(e) => e.currentTarget.style.background = "none"}>
               {label}
             </button>
@@ -791,7 +791,7 @@ function SnoozeControl({ snoozedUntil, onSnooze }) {
           </button>
         ))}
         <button onClick={() => setShowPicker(!showPicker)}
-          style={{ fontSize: 11, fontWeight: 600, borderRadius: 6, padding: "5px 12px", border: "1px solid #e3e6ea", cursor: "pointer", fontFamily: "inherit", background: showPicker ? "#f5f1eb" : "#fff", color: "#5e6470" }}>
+          style={{ fontSize: 11, fontWeight: 600, borderRadius: 6, padding: "5px 12px", border: "1px solid #e3e6ea", cursor: "pointer", fontFamily: "inherit", background: showPicker ? "#f3f4f6" : "#fff", color: "#5e6470" }}>
           📅 Vælg dato
         </button>
       </div>
@@ -800,7 +800,7 @@ function SnoozeControl({ snoozedUntil, onSnooze }) {
           <input type="date" value={customDate} min={today} onChange={(e) => setCustomDate(e.target.value)}
             style={{ ...SELECT, fontSize: 12, flex: 1 }} />
           <button onClick={handleCustom} disabled={!customDate}
-            style={{ background: customDate ? "#1e293b" : "#f5f1eb", color: customDate ? "#fff" : "#b8bfcc", border: "none", borderRadius: 7, padding: "8px 12px", fontSize: 12, fontWeight: 700, cursor: customDate ? "pointer" : "default", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+            style={{ background: customDate ? "#1e293b" : "#f3f4f6", color: customDate ? "#fff" : "#b8bfcc", border: "none", borderRadius: 7, padding: "8px 12px", fontSize: 12, fontWeight: 700, cursor: customDate ? "pointer" : "default", fontFamily: "inherit", whiteSpace: "nowrap" }}>
             Udsæt
           </button>
         </div>
@@ -884,7 +884,7 @@ function LogInput({ areaColor, onSubmit }) {
           style={{ display: "none" }} onChange={(e) => handleFiles(e.target.files)} />
         <button onClick={() => fileRef.current?.click()}
           title="Vedhæft fil"
-          style={{ background: "#f5f1eb", color: "#5e6470", border: "none", borderRadius: 7, padding: "0 11px", fontSize: 14, cursor: "pointer" }}>
+          style={{ background: "#f3f4f6", color: "#5e6470", border: "none", borderRadius: 7, padding: "0 11px", fontSize: 14, cursor: "pointer" }}>
           📎
         </button>
         <button onClick={submit}
@@ -919,18 +919,18 @@ function CalendarView({ tasks, goals, onToggle, onOpenTask, openTaskId, onSnooze
   const noDue    = active.filter((t) => !t.due);
   const snoozed  = tasks.filter((t) => t.status !== "done" && t.snoozedUntil && dayStart(t.snoozedUntil) > today);
 
-  const CalSection = ({ label, color, emoji, tasks: ts }) => {
+  const CalSection = ({ label, color, tasks: ts }) => {
     if (ts.length === 0) return null;
     return (
       <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, padding: "0 10px" }}>
-          <span style={{ fontSize: 15 }}>{emoji}</span>
-          <span style={{ fontSize: 12, fontWeight: 700, color, letterSpacing: "0.2px" }}>{label}</span>
-          <span style={{ fontSize: 11, color: "#b8bfcc", marginLeft: 4 }}>{ts.length} opgave{ts.length !== 1 ? "r" : ""}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, padding: "0 4px" }}>
+          <span style={{ width: 3, height: 14, borderRadius: 99, background: color, display: "inline-block", flexShrink: 0 }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#374151", letterSpacing: "0.4px", textTransform: "uppercase" }}>{label}</span>
+          <span style={{ fontSize: 11, color: "#9ca3af", background: "#f3f4f6", borderRadius: 99, padding: "1px 7px", fontWeight: 500 }}>{ts.length}</span>
         </div>
-        <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e3e6ea", overflow: "hidden" }}>
+        <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e8ecf0", overflow: "hidden" }}>
           {ts.map((t, i) => (
-            <div key={t.id} style={{ borderTop: i > 0 ? "1px solid #f5f1eb" : "none" }}>
+            <div key={t.id} style={{ borderTop: i > 0 ? "1px solid #f3f4f6" : "none" }}>
               <CalRow task={t} onToggle={onToggle} onOpen={onOpenTask} isOpen={openTaskId === t.id} onSnooze={onSnooze} selected={selectedIds?.includes(t.id)} onSelect={onSelect} />
             </div>
           ))}
@@ -942,11 +942,11 @@ function CalendarView({ tasks, goals, onToggle, onOpenTask, openTaskId, onSnooze
   return (
     <div>
       <PageHeader title="Kalender" subtitle="Opgaver sorteret efter deadline. Snooze det der ikke er aktuelt endnu." />
-      {overdue.length > 0  && <CalSection label="OVERSKREDET" emoji="🚨" color="#ef4444" tasks={overdue.sort((a,b) => a.due < b.due ? -1 : 1)} />}
-      <CalSection label="I DAG"              emoji="📌" color="#f97316" tasks={todayT} />
-      <CalSection label="DE NÆSTE 7 DAGE"   emoji="📅" color="#4285f4" tasks={next7.sort((a,b) => a.due < b.due ? -1 : 1)} />
-      <CalSection label="DE NÆSTE 30 DAGE"  emoji="🗓"  color="#10b981" tasks={next30.sort((a,b) => a.due < b.due ? -1 : 1)} />
-      {noDue.length > 0    && <CalSection label="INGEN DEADLINE"       emoji="☐"  color="#7f8c9a" tasks={noDue} />}
+      {overdue.length > 0  && <CalSection label="OVERSKREDET" emoji="" color="#ef4444" tasks={overdue.sort((a,b) => a.due < b.due ? -1 : 1)} />}
+      <CalSection label="I DAG"              emoji="" color="#f97316" tasks={todayT} />
+      <CalSection label="DE NÆSTE 7 DAGE"   emoji="" color="#4285f4" tasks={next7.sort((a,b) => a.due < b.due ? -1 : 1)} />
+      <CalSection label="DE NÆSTE 30 DAGE"  emoji=""  color="#10b981" tasks={next30.sort((a,b) => a.due < b.due ? -1 : 1)} />
+      {noDue.length > 0    && <CalSection label="INGEN DEADLINE"       emoji=""  color="#7f8c9a" tasks={noDue} />}
       {snoozed.length > 0  && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, padding: "0 10px" }}>
@@ -956,7 +956,7 @@ function CalendarView({ tasks, goals, onToggle, onOpenTask, openTaskId, onSnooze
           </div>
           <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e3e6ea", opacity: 0.6, overflow: "hidden" }}>
             {snoozed.map((t, i) => (
-              <div key={t.id} style={{ borderTop: i > 0 ? "1px solid #f5f1eb" : "none" }}>
+              <div key={t.id} style={{ borderTop: i > 0 ? "1px solid #f3f4f6" : "none" }}>
                 <CalRow task={t} onToggle={onToggle} onOpen={onOpenTask} isOpen={openTaskId === t.id} onSnooze={onSnooze} snoozed />
               </div>
             ))}
@@ -981,7 +981,7 @@ function CalRow({ task: t, onToggle, onOpen, isOpen, onSnooze, snoozed, selected
 
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setShowSnooze(false); }}
-      style={{ padding: "9px 14px", display: "flex", alignItems: "center", gap: 10, background: selected ? "#eef2ff" : isOpen ? "#f5f1eb" : hover ? "#f8f9fb" : "transparent", transition: "background 0.1s" }}>
+      style={{ padding: "9px 14px", display: "flex", alignItems: "center", gap: 10, background: selected ? "#eef2ff" : isOpen ? "#f3f4f6" : hover ? "#f8f9fb" : "transparent", transition: "background 0.1s" }}>
       {onSelect ? (
         <button onClick={() => onSelect(t.id)} title={selected ? "Fravælg" : "Vælg"}
           style={{ width: 16, height: 16, borderRadius: 4, border: selected ? "none" : `1.5px solid ${hover || selected ? "#6366f1" : "#d4cfc9"}`, background: selected ? "#6366f1" : hover ? "#ede9fe" : "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", opacity: selected || hover ? 1 : 0 }}>
@@ -1010,7 +1010,7 @@ function CalRow({ task: t, onToggle, onOpen, isOpen, onSnooze, snoozed, selected
               {[["I morgen", 1], ["3 dage", 3], ["1 uge", 7], ["2 uger", 14], ["1 måned", 30]].map(([label, days]) => (
                 <button key={days} onClick={() => { onSnooze(t.id, days); setShowSnooze(false); }}
                   style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 12px", fontSize: 12, border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", borderRadius: 5, color: "#374151" }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#f5f1eb"}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "#f3f4f6"}
                   onMouseLeave={(e) => e.currentTarget.style.background = "none"}>
                   {label}
                 </button>
@@ -1054,7 +1054,7 @@ function BoardView({ tasks, onOpenTask, openTaskId, onSetStatus }) {
       {cols.map(([key, s]) => {
         const col = tasks.filter((t) => (t.status || "todo") === key);
         return (
-          <div key={key} style={{ minWidth: 220, flex: "0 0 220px", background: "#f5f1eb", borderRadius: 10, padding: "10px 8px" }}>
+          <div key={key} style={{ minWidth: 220, flex: "0 0 220px", background: "#f3f4f6", borderRadius: 10, padding: "10px 8px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, padding: "0 4px" }}>
               <span style={{ fontSize: 13 }}>{s.icon}</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: s.color }}>{s.label.toUpperCase()}</span>
@@ -1080,7 +1080,7 @@ function BoardView({ tasks, onOpenTask, openTaskId, onSetStatus }) {
                       {due && <span style={{ fontSize: 10, color: due.color, marginLeft: "auto" }}>📅 {due.label}</span>}
                     </div>
                     {/* Quick status change */}
-                    <div style={{ display: "flex", gap: 3, marginTop: 8, borderTop: "1px solid #f5f1eb", paddingTop: 6 }}>
+                    <div style={{ display: "flex", gap: 3, marginTop: 8, borderTop: "1px solid #f3f4f6", paddingTop: 6 }}>
                       {Object.entries(STATUSES).filter(([k]) => k !== key).map(([k, st]) => (
                         <button key={k} onClick={(e) => { e.stopPropagation(); onSetStatus(t.id, k); }}
                           title={`Sæt til ${st.label}`}
@@ -1121,7 +1121,7 @@ function SearchResults({ tasks, query, onToggle, onOpenTask, openTaskId, onSetSt
       ) : (
         <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e3e6ea", overflow: "hidden" }}>
           {results.map((t, i) => (
-            <div key={t.id} style={{ borderTop: i > 0 ? "1px solid #f5f1eb" : "none" }}>
+            <div key={t.id} style={{ borderTop: i > 0 ? "1px solid #f3f4f6" : "none" }}>
               <TaskLine task={t} onToggle={onToggle} onOpen={onOpenTask} showClient isOpen={openTaskId === t.id} onSetStatus={onSetStatus} />
             </div>
           ))}
@@ -1397,7 +1397,7 @@ function GoalRow({ goal: g, taskCount, doneTasks, onClick }) {
   const pct = taskCount ? Math.round((doneTasks / taskCount) * 100) : 0;
   return (
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 14px", borderRadius: 8, background: hover ? "#f7f3ef" : "#fff", border: "1px solid #e3e6ea", marginBottom: 8, cursor: "pointer", transition: "background 0.1s" }}>
+      style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 14px", borderRadius: 8, background: hover ? "#f9fafb" : "#fff", border: "1px solid #e3e6ea", marginBottom: 8, cursor: "pointer", transition: "background 0.1s" }}>
       <span style={{ fontSize: 18 }}>{g.emoji}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
@@ -1498,10 +1498,10 @@ function GoalDetail({ goal: g, tasks, onBack, onAddLog, onToggleTask, onUpdateFi
           </div>
         </div>
         <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e3e6ea", overflow: "hidden", position: "sticky", top: 24 }}>
-          <div style={{ padding: "14px 16px", borderBottom: "1px solid #f5f1eb" }}>
+          <div style={{ padding: "14px 16px", borderBottom: "1px solid #f3f4f6" }}>
             <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#7f8c9a", letterSpacing: "0.6px" }}>AKTIVITETSLOG</p>
           </div>
-          <div style={{ padding: "10px 12px", borderBottom: "1px solid #f5f1eb" }}>
+          <div style={{ padding: "10px 12px", borderBottom: "1px solid #f3f4f6" }}>
             <div style={{ display: "flex", gap: 6 }}>
               <input style={{ flex: 1, border: "1px solid #e3e6ea", borderRadius: 7, padding: "8px 10px", fontSize: 12, fontFamily: "inherit", outline: "none", background: "#f8f9fb" }}
                 placeholder="Hvad skete der?" value={logInput} onChange={(e) => setLogInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLog()} />
@@ -1514,7 +1514,7 @@ function GoalDetail({ goal: g, tasks, onBack, onAddLog, onToggleTask, onUpdateFi
               <div key={entry.id} style={{ display: "flex", gap: 10, padding: "10px 16px" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
                   <div style={{ width: 7, height: 7, borderRadius: "50%", background: g.color, marginTop: 4 }} />
-                  {i < g.log.length - 1 && <div style={{ width: 1, flex: 1, background: "#f5f1eb", margin: "3px 0" }} />}
+                  {i < g.log.length - 1 && <div style={{ width: 1, flex: 1, background: "#f3f4f6", margin: "3px 0" }} />}
                 </div>
                 <div style={{ flex: 1, paddingBottom: 6 }}>
                   <p style={{ margin: "0 0 2px", fontSize: 10, color: "#b8bfcc" }}>{fmtDate(entry.date)}</p>
@@ -1536,14 +1536,14 @@ function ClientView({ client, subNav, setSubNav, tasks, goals, allGoals, routine
   const gAds  = tasks.filter((t) => t.area === "google-ads" && t.status !== "done");
   const meta   = tasks.filter((t) => t.area === "meta"       && t.status !== "done");
   const tabs = [
-    { key: "issues",     label: "Issues",       icon: "🔥", badge: urgentCount || null },
-    { key: "maal",       label: "Mål",          icon: "◎" },
-    { key: "opgaver",    label: "Alle opgaver",  icon: "☐" },
-    { key: "google-ads", label: "Google Ads",   icon: "🎯", badge: gAds.length || null,  badgeColor: "#4285f4" },
-    { key: "meta",       label: "Meta",         icon: "📘", badge: meta.length || null,  badgeColor: "#1877f2" },
-    { key: "seo",        label: "SEO",          icon: "🌿", badge: seoPages.length || null, badgeColor: "#10b981" },
-    { key: "tid",        label: "Tid",          icon: "⏱", badge: timeLog.length || null, badgeColor: "#f97316" },
-    { key: "timeline",   label: "Timeline",     icon: "📋" },
+    { key: "issues",     label: "Issues",       badge: urgentCount || null },
+    { key: "maal",       label: "Mål" },
+    { key: "opgaver",    label: "Alle opgaver" },
+    { key: "google-ads", label: "Google Ads",   badge: gAds.length || null,  badgeColor: "#4285f4" },
+    { key: "meta",       label: "Meta",         badge: meta.length || null,  badgeColor: "#1877f2" },
+    { key: "seo",        label: "SEO",          badge: seoPages.length || null, badgeColor: "#10b981" },
+    { key: "tid",        label: "Tid",          badge: timeLog.length || null, badgeColor: "#f97316" },
+    { key: "timeline",   label: "Timeline" },
   ];
   return (
     <div style={{ maxWidth: 1100, width: "100%", margin: "0 auto", padding: "32px 36px" }}>
@@ -1551,16 +1551,16 @@ function ClientView({ client, subNav, setSubNav, tasks, goals, allGoals, routine
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: clientColor, display: "inline-block", flexShrink: 0 }} />
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px" }}>{client}</h1>
       </div>
-      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid #e3e6ea", marginBottom: 28, overflowX: "auto" }}>
-        {tabs.map(({ key, label, icon, badge, badgeColor }) => (
+      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid #e8ecf0", marginBottom: 28, overflowX: "auto" }}>
+        {tabs.map(({ key, label, badge, badgeColor }) => (
           <button key={key} onClick={() => setSubNav(key)}
-            style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "8px 16px", fontSize: 12, fontWeight: subNav === key ? 700 : 500, color: subNav === key ? "#1e293b" : "#7f8c9a", borderBottom: subNav === key ? `2px solid ${clientColor}` : "2px solid transparent", marginBottom: -1, whiteSpace: "nowrap", flexShrink: 0 }}>
-            <span>{icon}</span><span>{label}</span>
-            {badge > 0 && <span style={{ background: badgeColor || "#ef4444", color: "#fff", borderRadius: 99, fontSize: 10, fontWeight: 800, padding: "1px 5px", lineHeight: 1.6 }}>{badge}</span>}
+            style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "9px 14px", fontSize: 12.5, fontWeight: subNav === key ? 600 : 400, color: subNav === key ? "#111827" : "#6b7280", borderBottom: subNav === key ? `2px solid ${clientColor}` : "2px solid transparent", marginBottom: -1, whiteSpace: "nowrap", flexShrink: 0, transition: "color 0.1s" }}>
+            <span>{label}</span>
+            {badge > 0 && <span style={{ background: badgeColor || "#ef4444", color: "#fff", borderRadius: 99, fontSize: 10, fontWeight: 700, padding: "1px 6px", lineHeight: 1.6 }}>{badge}</span>}
           </button>
         ))}
         <div style={{ flex: 1 }} />
-        <button onClick={onAddTask} style={{ background: "none", border: "1px solid #e3e6ea", borderRadius: 7, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#5e6470", marginBottom: 4, alignSelf: "center", flexShrink: 0 }}>+ Opgave</button>
+        <button onClick={onAddTask} style={{ background: "none", border: "1px solid #e8ecf0", borderRadius: 7, padding: "5px 12px", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", color: "#6b7280", marginBottom: 4, alignSelf: "center", flexShrink: 0 }}>+ Opgave</button>
       </div>
       {subNav === "issues"     && <IssuesView tasks={tasks} onToggle={onToggle} onAdd={onAddTask} onOpenTask={onOpenTask} openTaskId={openTaskId} hideClient />}
       {subNav === "maal"       && (
@@ -1950,7 +1950,7 @@ function SeoPageRow({ page, onUpdate, onAddEntry }) {
       </div>
 
       {expanded && (
-        <div style={{ borderTop: "1px solid #f5f1eb" }}>
+        <div style={{ borderTop: "1px solid #f3f4f6" }}>
 
           {/* Chart */}
           <div style={{ padding: "14px 16px 0" }}>
@@ -1989,7 +1989,7 @@ function SeoPageRow({ page, onUpdate, onAddEntry }) {
 
           {/* Combined timeline */}
           {timeline.length > 0 && (
-            <div style={{ borderTop: "1px solid #f5f1eb", padding: "12px 16px" }}>
+            <div style={{ borderTop: "1px solid #f3f4f6", padding: "12px 16px" }}>
               <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: "#7f8c9a", letterSpacing: "0.5px" }}>TIMELINE</p>
               {timeline.map((entry, i) => {
                 const isPos = entry.type === "pos";
@@ -2000,7 +2000,7 @@ function SeoPageRow({ page, onUpdate, onAddEntry }) {
                   <div key={entry.data.id + entry.type} style={{ display: "flex", gap: 10 }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 4 }}>
                       <div style={{ width: 7, height: 7, borderRadius: "50%", background: dotColor }} />
-                      {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, background: "#f0ece8", margin: "3px 0", minHeight: 14 }} />}
+                      {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, background: "#f5f6ff", margin: "3px 0", minHeight: 14 }} />}
                     </div>
                     <div style={{ flex: 1, paddingBottom: 10 }}>
                       <p style={{ margin: "0 0 2px", fontSize: 10, color: "#b8bfcc" }}>{entry.date}</p>
@@ -2016,7 +2016,7 @@ function SeoPageRow({ page, onUpdate, onAddEntry }) {
           )}
 
           {/* Notes */}
-          <div style={{ borderTop: "1px solid #f5f1eb", padding: "12px 16px" }}>
+          <div style={{ borderTop: "1px solid #f3f4f6", padding: "12px 16px" }}>
             <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: "#7f8c9a", letterSpacing: "0.5px" }}>NOTER</p>
             {editNotes ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -2047,7 +2047,7 @@ function RoutineRow({ routine: r, onDone }) {
   const days = r.lastDone ? Math.floor((Date.now() - new Date(r.lastDone)) / 86400000) : null;
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 8, background: hover ? "#f5f1eb" : "transparent" }}>
+      style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 8, background: hover ? "#f3f4f6" : "transparent" }}>
       <span style={{ width: 8, height: 8, borderRadius: "50%", background: r.color, flexShrink: 0 }} />
       <span style={{ flex: 1, fontSize: 13, color: "#1e293b" }}>{r.title}</span>
       <span style={{ fontSize: 11, color: "#7f8c9a" }}>{r.cadence}</span>
@@ -2284,7 +2284,7 @@ function RetainerView({ retainers, tasks, onUpdate, onAddExpense, onDeleteExpens
               <span style={{ fontSize: 10, color: "#7f8c9a" }}>Timer denne måned</span>
               <span style={{ fontSize: 10, fontWeight: 700, color: pct >= 90 ? "#ef4444" : pct >= 70 ? "#f59e0b" : "#22c55e" }}>{hoursUsed}t / {r.hoursIncluded}t</span>
             </div>
-            <div style={{ height: 5, background: "#f5f1eb", borderRadius: 99, overflow: "hidden" }}>
+            <div style={{ height: 5, background: "#f3f4f6", borderRadius: 99, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : pct >= 70 ? "#f59e0b" : "#22c55e", borderRadius: 99, transition: "width 0.3s" }} />
             </div>
           </div>
@@ -2324,7 +2324,7 @@ function RetainerView({ retainers, tasks, onUpdate, onAddExpense, onDeleteExpens
                 {(r.expenses || []).map((e) => {
                   const cat = EXPENSE_CATS[e.category] || EXPENSE_CATS.other;
                   return (
-                    <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: "1px solid #f5f1eb" }}>
+                    <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: "1px solid #f3f4f6" }}>
                       <span style={{ fontSize: 10, fontWeight: 700, color: cat.color, background: cat.color + "18", borderRadius: 3, padding: "1px 6px", flexShrink: 0 }}>{cat.label}</span>
                       <span style={{ fontSize: 12, color: "#374151", flex: 1 }}>{e.description}</span>
                       <span style={{ fontSize: 11, color: "#7f8c9a", flexShrink: 0 }}>{e.date?.slice(0, 7)}</span>
