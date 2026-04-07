@@ -22,7 +22,7 @@ const fmtDue = (iso) => {
 };
 
 
-const BG = "#f3f4f6";
+const BG = "#f7f8fa";
 const SIDEBAR_W = 228;
 const PANEL_MIN = 320;
 const PANEL_MAX = 640;
@@ -206,12 +206,12 @@ export default function App() {
   const openTask = tasks.find((t) => t.id === openTaskId);
 
   const navItems = [
-    { key: "kalender", label: "Kalender", icon: "📅" },
-    { key: "issues",   label: "Issues",   icon: "🔥", badge: urgentCount || null },
-    { key: "maal",     label: "Mål",      icon: "◎" },
-    { key: "opgaver",  label: "Alle opgaver",  icon: "☐" },
-    { key: "rutiner",  label: "Rutiner",  icon: "↻" },
-    { key: "retainer", label: "Retainer", icon: "💰" },
+    { key: "kalender", label: "Kalender",     icon: <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> },
+    { key: "issues",   label: "Issues",       icon: <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>, badge: urgentCount || null },
+    { key: "maal",     label: "Mål",          icon: <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg> },
+    { key: "opgaver",  label: "Alle opgaver", icon: <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    { key: "rutiner",  label: "Rutiner",      icon: <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    { key: "retainer", label: "Retainer",     icon: <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   ];
 
   return (
@@ -228,19 +228,22 @@ export default function App() {
       )}
 
       {/* ── SIDEBAR ── */}
-      <aside style={{ width: SIDEBAR_W, flexShrink: 0, background: "#fff", borderRight: "1px solid #e3e6ea", display: "flex", flexDirection: "column", overflow: "hidden", zIndex: 10 }}>
-        <div style={{ padding: "20px 16px 14px" }}>
-          <span style={{ fontWeight: 800, fontSize: 14, letterSpacing: "-0.3px", color: "#1e1f21" }}>Focus</span>
+      <aside style={{ width: SIDEBAR_W, flexShrink: 0, background: "#fff", borderRight: "1px solid #e8ecf0", display: "flex", flexDirection: "column", overflow: "hidden", zIndex: 10 }}>
+        <div style={{ padding: "16px 14px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 22, height: 22, borderRadius: 6, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ color: "#fff", fontSize: 11, fontWeight: 800 }}>F</span>
+          </div>
+          <span style={{ fontWeight: 700, fontSize: 13.5, letterSpacing: "-0.3px", color: "#111827" }}>Focus</span>
         </div>
-        <div style={{ padding: "0 12px 8px" }}>
+        <div style={{ padding: "0 10px 8px" }}>
           <div style={{ position: "relative" }}>
-            <span style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "#b8bfcc", pointerEvents: "none" }}>⌕</span>
+            <svg style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="13" height="13" fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke="#9ca3af" strokeWidth="2"/><path d="m16.5 16.5 3.5 3.5" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"/></svg>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Søg..."
-              style={{ width: "100%", border: "1px solid #e3e6ea", borderRadius: 6, padding: "6px 8px 6px 26px", fontSize: 12, fontFamily: "inherit", outline: "none", background: "#f8f9fb", boxSizing: "border-box", color: "#1e293b" }} />
-            {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#b8bfcc", lineHeight: 1, padding: 0 }}>×</button>}
+              style={{ width: "100%", border: "1px solid #e8ecf0", borderRadius: 7, padding: "6px 8px 6px 28px", fontSize: 12, fontFamily: "inherit", outline: "none", background: "#f9fafb", boxSizing: "border-box", color: "#111827" }} />
+            {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 7, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#9ca3af", lineHeight: 1, padding: 0 }}>×</button>}
           </div>
         </div>
-        <div style={{ padding: "0 8px 8px" }}>
+        <div style={{ padding: "0 8px 4px" }}>
           {navItems.map(({ key, label, icon, badge }) => (
             <SidebarItem key={key} icon={icon} label={label} badge={badge}
               active={nav === key && !clientFilter && !openGoalId}
@@ -254,7 +257,7 @@ export default function App() {
               const color = goal?.color || "#6366f1";
               return (
                 <SidebarItem key={c}
-                  icon={<span style={{ width: 8, height: 8, borderRadius: "50%", background: color, display: "inline-block" }} />}
+                  icon={<span style={{ width: 8, height: 8, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />}
                   label={c}
                   active={clientFilter === c && !openGoalId}
                   onClick={() => { setClientFilter(c); setClientSubNav("issues"); setOpenGoalId(null); setOpenTaskId(null); }} />
@@ -268,7 +271,7 @@ export default function App() {
               const clientUrgent = tasks.filter((t) => t.client === c && t.flag && t.status !== "done").length;
               return (
                 <SidebarItem key={c}
-                  icon={<span style={{ width: 8, height: 8, borderRadius: "50%", background: color, display: "inline-block" }} />}
+                  icon={<span style={{ width: 8, height: 8, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />}
                   label={c} badge={clientUrgent || null} badgeColor="#f97316"
                   active={clientFilter === c && !openGoalId}
                   onClick={() => { setClientFilter(c); setClientSubNav("issues"); setOpenGoalId(null); setOpenTaskId(null); }} />
@@ -276,10 +279,10 @@ export default function App() {
             })}
           </SidebarSection>
         </div>
-        <div style={{ padding: "12px 8px 16px", borderTop: "1px solid #f5f1eb" }}>
+        <div style={{ padding: "10px 10px 14px", borderTop: "1px solid #f3f4f6" }}>
           <button onClick={() => setAdding(true)}
-            style={{ width: "100%", background: "none", border: "1px dashed #d4cfc9", borderRadius: 8, padding: "9px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#94a3b8", textAlign: "left" }}>
-            + Ny opgave
+            style={{ width: "100%", background: "#4f46e5", border: "none", borderRadius: 7, padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#fff", textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 14, lineHeight: 1 }}>+</span> Ny opgave
           </button>
         </div>
       </aside>
@@ -1029,11 +1032,15 @@ function CalRow({ task: t, onToggle, onOpen, isOpen, onSnooze, snoozed, selected
 // ─── SIDEBAR ITEM ─────────────────────────────────────────────────────────────
 
 function SidebarItem({ icon, label, badge, badgeColor, active, onClick }) {
+  const [hover, setHover] = useState(false);
   return (
-    <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "6px 10px 6px 8px", border: "none", borderLeft: active ? "2px solid #1e1f21" : "2px solid transparent", borderRadius: 0, cursor: "pointer", fontFamily: "inherit", background: active ? "#f5f0e8" : "transparent", color: active ? "#1e1f21" : "#78716c", fontSize: 12.5, fontWeight: active ? 600 : 400, textAlign: "left", transition: "all 0.1s" }}>
-      <span style={{ fontSize: typeof icon === "string" ? 12 : "inherit", width: 15, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: active ? 1 : 0.7 }}>{icon}</span>
+    <button onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "5px 10px", border: "none", borderRadius: 6, cursor: "pointer", fontFamily: "inherit", background: active ? "#eff0ff" : hover ? "#f3f4f6" : "transparent", color: active ? "#4f46e5" : "#4b5563", fontSize: 12.5, fontWeight: active ? 600 : 400, textAlign: "left", transition: "all 0.1s", marginBottom: 1 }}>
+      <span style={{ fontSize: typeof icon === "string" ? 12 : "inherit", width: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: active ? 1 : 0.65 }}>{icon}</span>
       <span style={{ flex: 1 }}>{label}</span>
-      {badge > 0 && <span style={{ background: badgeColor || "#ef4444", color: "#fff", borderRadius: 99, fontSize: 9, fontWeight: 800, padding: "1px 5px", lineHeight: 1.7 }}>{badge}</span>}
+      {badge > 0 && <span style={{ background: badgeColor || "#ef4444", color: "#fff", borderRadius: 99, fontSize: 9, fontWeight: 800, padding: "1px 6px", lineHeight: 1.7 }}>{badge}</span>}
     </button>
   );
 }
@@ -1126,11 +1133,11 @@ function SearchResults({ tasks, query, onToggle, onOpenTask, openTaskId, onSetSt
 
 function SidebarSection({ label, open, onToggle, children }) {
   return (
-    <div style={{ marginBottom: 2, marginTop: 8 }}>
+    <div style={{ marginBottom: 2, marginTop: 12 }}>
       <button onClick={onToggle}
-        style={{ display: "flex", alignItems: "center", width: "100%", padding: "3px 10px 5px 10px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit" }}>
-        <span style={{ fontSize: 9.5, fontWeight: 600, color: "#9ca3af", letterSpacing: "0.7px", flex: 1, textAlign: "left", textTransform: "uppercase" }}>{label}</span>
-        <span style={{ fontSize: 9, color: "#b8bfcc", transform: open ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s", display: "inline-block" }}>▾</span>
+        style={{ display: "flex", alignItems: "center", width: "100%", padding: "2px 10px 4px 10px", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit" }}>
+        <span style={{ fontSize: 10, fontWeight: 600, color: "#9ca3af", letterSpacing: "0.6px", flex: 1, textAlign: "left", textTransform: "uppercase" }}>{label}</span>
+        <svg style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s", flexShrink: 0 }} width="10" height="10" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </button>
       {open && <div>{children}</div>}
     </div>
@@ -1139,10 +1146,10 @@ function SidebarSection({ label, open, onToggle, children }) {
 
 function PageHeader({ title, subtitle, right }) {
   return (
-    <div style={{ marginBottom: 32, display: "flex", alignItems: "flex-end", gap: 12 }}>
+    <div style={{ marginBottom: 28, display: "flex", alignItems: "flex-end", gap: 12 }}>
       <div style={{ flex: 1 }}>
-        <h1 style={{ margin: 0, fontSize: 34, fontWeight: 700, letterSpacing: "-0.8px", color: "#1e1f21", lineHeight: 1.1 }}>{title}</h1>
-        {subtitle && <p style={{ margin: "8px 0 0", fontSize: 13, color: "#9ca3af", fontWeight: 400 }}>{subtitle}</p>}
+        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, letterSpacing: "-0.5px", color: "#111827", lineHeight: 1.2 }}>{title}</h1>
+        {subtitle && <p style={{ margin: "5px 0 0", fontSize: 13, color: "#6b7280", fontWeight: 400 }}>{subtitle}</p>}
       </div>
       {right}
     </div>
