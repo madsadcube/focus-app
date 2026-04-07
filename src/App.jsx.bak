@@ -1,0 +1,622 @@
+import { useState, useEffect, useRef } from "react";
+
+// ─── DATA ───────────────────────────────────────────────────────────────────
+
+const now = () => new Date().toISOString();
+const fmt = (iso) => {
+  const d = new Date(iso);
+  return d.toLocaleDateString("da-DK", { day: "numeric", month: "short" }) + " " +
+    d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+};
+const daysSince = (iso) => {
+  if (!iso) return 99;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+};
+
+const INITIAL_PROJECTS = [
+  {
+    id: 1,
+    name: "Cardirect",
+    emoji: "🚗",
+    color: "#ef4444",
+    goal: "Webshop med ePay live og første Google Ads kampagne i april",
+    roadmap: "ePay opsætning → test betaling → Meta ads → Google Ads",
+    bottleneck: "Nets-forretningsnumre ikke tastet ind i ePay endnu",
+    firstStep: "Log ind på app.epay.eu og indtast Dankort-nr. 3581275",
+    lastTouched: "2026-04-02T10:00:00Z",
+    log: [
+      { id: 1, text: "Facebook vinterhjul-annoncer — 2 af 3 færdige", done: true, date: "2026-04-04T14:30:00Z" },
+      { id: 2, text: "Cardirect profil oprettet i brain", done: true, date: "2026-04-04T11:00:00Z" },
+      { id: 3, text: "ePay-konto bekræftet klar. Nets-numre modtaget 31. marts.", done: true, date: "2026-04-01T09:00:00Z" },
+    ],
+    subtasks: [
+      { id: 101, title: "Log ind på app.epay.eu", done: false },
+      { id: 102, title: "Dankort-nr. 3581275 ind i ePay", done: false },
+      { id: 103, title: "Internationale kort-nr. 9099920", done: false },
+      { id: 104, title: "Test betaling", done: false },
+      { id: 105, title: "Store body opsætning", done: false },
+      { id: 106, title: "Facebook annonce 3 — EV/niche-vinkel", done: false },
+    ],
+    due: "2026-04-14",
+    status: "active",
+  },
+  {
+    id: 2,
+    name: "Bambusudsalg",
+    emoji: "🌿",
+    color: "#10b981",
+    goal: "Optimere Google Shopping så dyre produkter (≥3.000 kr.) prioriteres",
+    roadmap: "Segment-analyse → strategi til Søren → implementér budgetjustering",
+    bottleneck: "Mangler opdateret Shopping-data til at lave den endelige anbefaling",
+    firstStep: "Hent ny Shopping-rapport fra Google Ads og kør segment-analyse",
+    lastTouched: "2026-04-04T12:00:00Z",
+    log: [
+      { id: 1, text: "Strategibesked sendt til Søren — follow-up analyse om 2 uger", done: true, date: "2026-04-04T12:00:00Z" },
+      { id: 2, text: "Bekræftet: dyre produkter har 54% højere AOV end billige", done: true, date: "2026-04-04T11:00:00Z" },
+      { id: 3, text: "Shopping-rapport analyseret med pandas (skiprows=2)", done: true, date: "2026-04-04T10:00:00Z" },
+    ],
+    subtasks: [
+      { id: 201, title: "Hent opdateret Shopping-rapport", done: false },
+      { id: 202, title: "Segment-analyse: billige vs. dyre produkter", done: false },
+      { id: 203, title: "ROAS-scenarie ved 200 og 300 kr. forsendelse", done: false },
+      { id: 204, title: "Send endelig anbefaling til Søren", done: false },
+    ],
+    due: "2026-04-18",
+    status: "active",
+  },
+  {
+    id: 3,
+    name: "Tækkekollektivet",
+    emoji: "🏠",
+    color: "#f59e0b",
+    goal: "Lokale landingssider der ranker og konverterer — starter med Humlebæk",
+    roadmap: "Humlebæk-side → anmeldelser + navngivet tækkemand → Helsinge-side",
+    bottleneck: "Siden mangler social proof — kun 1 anmeldelse og ingen navngivet fagmand",
+    firstStep: "Skriv 3 anmeldelser med stednavne (Helsingør, Espergærde, Vedbæk) og send til Chris",
+    lastTouched: "2026-04-04T16:00:00Z",
+    log: [
+      { id: 1, text: "Side-audit gennemført — sammenlignet med Austin Plumbing demo", done: true, date: "2026-04-04T16:00:00Z" },
+      { id: 2, text: "Google Maps embed (Humlebæk) lavet og font verificeret (Libre Baskerville)", done: true, date: "2026-04-04T15:00:00Z" },
+      { id: 3, text: "Identificeret top-3 fixes: anmeldelser, navngivet person, garanti-sektion", done: true, date: "2026-04-04T16:30:00Z" },
+    ],
+    subtasks: [
+      { id: 301, title: "3-4 anmeldelser med stednavne", done: false },
+      { id: 302, title: "Navngiv tækkemanden med foto og erfaring", done: false },
+      { id: 303, title: "Tilføj garanti-sektion", done: false },
+      { id: 304, title: "Kørselsvejledning-kort i stedet for statisk kort", done: false },
+      { id: 305, title: "Spørg Chris om Helsinge-format (HTML eller Docs)", done: false },
+    ],
+    due: "2026-04-15",
+    status: "active",
+  },
+  {
+    id: 4,
+    name: "Synlii Intern",
+    emoji: "💼",
+    color: "#6366f1",
+    goal: "Reducér faste omkostninger og skab tid til klienterhvervelse",
+    roadmap: "Abonnements-review → Astro vs Webflow beslutning → frigjort tid til salg",
+    bottleneck: "Ingen klar prioritering — tre løse todos der alle venter",
+    firstStep: "Beslut: skal Webflow erstattes af Astro? (300 kr/md i spil)",
+    lastTouched: "2026-03-31T10:00:00Z",
+    log: [
+      { id: 1, text: "Pat Arel Fix Your Site — reminder oprettet til 21. april", done: true, date: "2026-04-04T13:00:00Z" },
+      { id: 2, text: "Astro vs Webflow todo oprettet", done: true, date: "2026-03-31T10:00:00Z" },
+    ],
+    subtasks: [
+      { id: 401, title: "Astro vs Webflow — tag beslutning", done: false },
+      { id: 402, title: "Adpulse — tjek ROI og brug", done: false },
+      { id: 403, title: "Pat Arel Fix Your Site — indsend URL", done: false },
+    ],
+    due: "2026-05-01",
+    status: "active",
+  },
+  {
+    id: 5,
+    name: "Brain & Systemer",
+    emoji: "🧠",
+    color: "#8b5cf6",
+    goal: "Brain kører som en effektiv arbejdsassistent der sparer tid dagligt",
+    roadmap: "key-relationships.md → Telegram inbox → Gmail trusted senders",
+    bottleneck: "key-relationships.md er ikke udfyldt — brain mangler vigtig kontekst",
+    firstStep: "Udfyld key-relationships.md: aktive kunder, leverandører, netværk",
+    lastTouched: "2026-04-04T11:00:00Z",
+    log: [
+      { id: 1, text: "bypassPermissions aktiveret i settings.json", done: true, date: "2026-04-04T11:00:00Z" },
+      { id: 2, text: "Telegram channels reminder oprettet til 21. april", done: true, date: "2026-04-04T13:00:00Z" },
+      { id: 3, text: "Decision Sheet Pattern dokumenteret", done: true, date: "2026-04-04T12:00:00Z" },
+    ],
+    subtasks: [
+      { id: 501, title: "key-relationships.md udfyldes", done: false },
+      { id: 502, title: "Telegram channels opsætning", done: false },
+      { id: 503, title: "Gmail trusted senders", done: false },
+      { id: 504, title: "Google Ads skill guide læses", done: false },
+    ],
+    due: "",
+    status: "active",
+  },
+];
+
+// ─── SCORE: inaktivitet × vigtighed ─────────────────────────────────────────
+
+const urgencyScore = (p) => {
+  const days = daysSince(p.lastTouched);
+  const hasDue = p.due ? 1 : 0;
+  const daysUntilDue = p.due
+    ? Math.max(0, Math.floor((new Date(p.due) - Date.now()) / 86400000))
+    : 30;
+  const dueFactor = hasDue ? Math.max(1, 10 - daysUntilDue) : 1;
+  return days * dueFactor;
+};
+
+// ─── STYLES ─────────────────────────────────────────────────────────────────
+
+const BASE = {
+  fontFamily: "'DM Sans', system-ui, sans-serif",
+  background: "#f8fafc",
+  color: "#1e293b",
+};
+
+const btn = (color, outline) => ({
+  border: outline ? `1.5px solid ${color}` : "none",
+  background: outline ? "transparent" : color,
+  color: outline ? color : "#fff",
+  borderRadius: 10,
+  padding: "10px 18px",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  letterSpacing: "-0.2px",
+  transition: "opacity 0.15s",
+});
+
+// ─── APP ────────────────────────────────────────────────────────────────────
+
+export default function FocusApp() {
+  const [projects, setProjects] = useState(INITIAL_PROJECTS);
+  const [view, setView] = useState("focus"); // "focus" | "projects"
+  const [openId, setOpenId] = useState(null);
+  const [logInput, setLogInput] = useState("");
+  const [skippedToday, setSkippedToday] = useState([]);
+
+  const sorted = [...projects]
+    .filter((p) => p.status === "active" && !skippedToday.includes(p.id))
+    .sort((a, b) => urgencyScore(b) - urgencyScore(a));
+
+  const focusCards = sorted.slice(0, 3);
+  const openProject = projects.find((p) => p.id === openId);
+
+  const touch = (id) =>
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, lastTouched: now() } : p))
+    );
+
+  const addLog = (id, text) => {
+    if (!text.trim()) return;
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              lastTouched: now(),
+              log: [{ id: Date.now(), text: text.trim(), done: false, date: now() }, ...p.log],
+            }
+          : p
+      )
+    );
+  };
+
+  const markLogDone = (projId, logId) =>
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projId
+          ? { ...p, log: p.log.map((l) => (l.id === logId ? { ...l, done: !l.done } : l)) }
+          : p
+      )
+    );
+
+  const toggleSub = (projId, subId) =>
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projId
+          ? {
+              ...p,
+              subtasks: p.subtasks.map((s) => (s.id === subId ? { ...s, done: !s.done } : s)),
+            }
+          : p
+      )
+    );
+
+  const updateField = (id, field, value) =>
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
+
+  const skip = (id) => setSkippedToday((prev) => [...prev, id]);
+
+  return (
+    <div style={{ ...BASE, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Top nav */}
+      <header style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "0 28px", display: "flex", alignItems: "center", gap: 0, height: 52, flexShrink: 0 }}>
+        <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: "-0.5px", marginRight: 32 }}>◈ Focus</span>
+        {["focus", "projects"].map((v) => (
+          <button key={v} onClick={() => { setView(v); setOpenId(null); }}
+            style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: view === v ? 700 : 400, color: view === v ? "#1e293b" : "#94a3b8", padding: "0 16px", height: "100%", borderBottom: view === v ? "2px solid #1e293b" : "2px solid transparent", letterSpacing: "-0.2px" }}>
+            {v === "focus" ? "⚡ Focus" : "📋 Projekter"}
+          </button>
+        ))}
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: 12, color: "#94a3b8" }}>
+          {new Date().toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })}
+        </span>
+      </header>
+
+      <div style={{ flex: 1, overflow: "auto" }}>
+
+        {/* ── FOCUS VIEW ── */}
+        {view === "focus" && (
+          <div style={{ maxWidth: 780, margin: "0 auto", padding: "32px 24px" }}>
+            <div style={{ marginBottom: 28 }}>
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, letterSpacing: "-0.6px" }}>
+                Hvad skal du arbejde på nu?
+              </h2>
+              <p style={{ margin: "6px 0 0", color: "#64748b", fontSize: 14 }}>
+                Sorteret efter inaktivitet og deadline. Max 3 ad gangen.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {focusCards.map((p, i) => (
+                <FocusCard
+                  key={p.id}
+                  project={p}
+                  rank={i + 1}
+                  onDo={() => { touch(p.id); setOpenId(p.id); setView("projects"); }}
+                  onSkip={() => skip(p.id)}
+                  onLog={(text) => addLog(p.id, text)}
+                />
+              ))}
+            </div>
+
+            {sorted.length > 3 && (
+              <div style={{ marginTop: 24, padding: "16px 20px", background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0" }}>
+                <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", fontWeight: 600, marginBottom: 10 }}>RESTEN — kommer i kø</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {sorted.slice(3).map((p) => (
+                    <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span>{p.emoji}</span>
+                      <span style={{ fontSize: 13, color: "#64748b", flex: 1 }}>{p.name}</span>
+                      <span style={{ fontSize: 11, color: "#cbd5e1" }}>Inaktiv {daysSince(p.lastTouched)} dage</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {skippedToday.length > 0 && (
+              <button onClick={() => setSkippedToday([])}
+                style={{ marginTop: 12, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#cbd5e1", fontFamily: "inherit" }}>
+                Nulstil spring-over ({skippedToday.length} sprunget over i dag)
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── PROJECTS VIEW ── */}
+        {view === "projects" && !openId && (
+          <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px" }}>
+            <h2 style={{ margin: "0 0 20px", fontSize: 20, fontWeight: 900, letterSpacing: "-0.5px" }}>Alle projekter</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {projects.map((p) => (
+                <ProjectRow key={p.id} project={p} onClick={() => setOpenId(p.id)} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── PROJECT DETAIL ── */}
+        {view === "projects" && openId && openProject && (
+          <ProjectDetail
+            project={openProject}
+            onBack={() => setOpenId(null)}
+            onUpdateField={(f, v) => updateField(openId, f, v)}
+            onAddLog={(text) => { addLog(openId, text); setLogInput(""); }}
+            onMarkLogDone={(lid) => markLogDone(openId, lid)}
+            onToggleSub={(sid) => toggleSub(openId, sid)}
+            logInput={logInput}
+            setLogInput={setLogInput}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── FOCUS CARD ─────────────────────────────────────────────────────────────
+
+function FocusCard({ project: p, rank, onDo, onSkip, onLog }) {
+  const [showLog, setShowLog] = useState(false);
+  const [logText, setLogText] = useState("");
+  const days = daysSince(p.lastTouched);
+  const subsDone = p.subtasks.filter((s) => s.done).length;
+  const totalSubs = p.subtasks.length;
+
+  const daysUntilDue = p.due
+    ? Math.floor((new Date(p.due) - Date.now()) / 86400000)
+    : null;
+
+  const dueBadgeColor = daysUntilDue !== null
+    ? daysUntilDue <= 3 ? "#ef4444" : daysUntilDue <= 7 ? "#f59e0b" : "#94a3b8"
+    : "#94a3b8";
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: rank === 1 ? "0 4px 24px rgba(0,0,0,0.06)" : "none" }}>
+      {/* Color bar */}
+      <div style={{ height: 4, background: p.color }} />
+
+      <div style={{ padding: "20px 24px" }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <span style={{ fontSize: 22 }}>{p.emoji}</span>
+          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.4px", flex: 1 }}>{p.name}</span>
+          <span style={{ fontSize: 11, color: "#94a3b8", background: "#f1f5f9", borderRadius: 99, padding: "3px 10px", fontWeight: 600 }}>
+            Inaktiv: {days === 0 ? "i dag" : `${days}d`}
+          </span>
+          {daysUntilDue !== null && (
+            <span style={{ fontSize: 11, color: dueBadgeColor, background: dueBadgeColor + "18", borderRadius: 99, padding: "3px 10px", fontWeight: 700 }}>
+              {daysUntilDue < 0 ? `${Math.abs(daysUntilDue)}d overskredet` : daysUntilDue === 0 ? "I dag!" : `${daysUntilDue}d til deadline`}
+            </span>
+          )}
+        </div>
+
+        {/* Grid: Goal + Bottleneck */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+          <InfoBox label="Mål" text={p.goal} color="#6366f1" />
+          <InfoBox label="Bottleneck" text={p.bottleneck} color="#ef4444" />
+        </div>
+
+        {/* First step — hero */}
+        <div style={{ background: p.color + "12", border: `1.5px solid ${p.color}33`, borderRadius: 12, padding: "14px 18px", marginBottom: 16 }}>
+          <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: p.color, letterSpacing: "0.5px", marginBottom: 6 }}>FØRSTE SKRIDT →</p>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#1e293b", lineHeight: 1.5 }}>{p.firstStep}</p>
+        </div>
+
+        {/* Progress */}
+        {totalSubs > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <div style={{ flex: 1, height: 5, background: "#e2e8f0", borderRadius: 99, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${(subsDone / totalSubs) * 100}%`, background: p.color, borderRadius: 99, transition: "width 0.4s" }} />
+            </div>
+            <span style={{ fontSize: 11, color: "#94a3b8", whiteSpace: "nowrap", fontWeight: 600 }}>{subsDone}/{totalSubs} checks</span>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button onClick={onDo} style={{ ...btn(p.color, false), flex: 1, minWidth: 140 }}>
+            ✓ Gør det nu
+          </button>
+          <button onClick={() => setShowLog(!showLog)} style={{ ...btn("#64748b", true) }}>
+            📝 Log aktivitet
+          </button>
+          <button onClick={onSkip} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#cbd5e1", fontFamily: "inherit", padding: "10px 8px" }}>
+            Spring over i dag →
+          </button>
+        </div>
+
+        {/* Quick log input */}
+        {showLog && (
+          <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+            <input
+              autoFocus
+              style={{ flex: 1, border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none" }}
+              placeholder="Hvad skete der? Hvad gjorde du?"
+              value={logText}
+              onChange={(e) => setLogText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { onLog(logText); setLogText(""); setShowLog(false); } }}
+            />
+            <button onClick={() => { onLog(logText); setLogText(""); setShowLog(false); }}
+              style={{ ...btn(p.color, false), padding: "10px 16px" }}>↵</button>
+          </div>
+        )}
+
+        {/* Last log entry */}
+        {p.log.length > 0 && (
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+            <p style={{ margin: 0, fontSize: 11, color: "#cbd5e1", fontWeight: 600, marginBottom: 4 }}>SENESTE AKTIVITET</p>
+            <p style={{ margin: 0, fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
+              <span style={{ color: "#94a3b8" }}>{fmt(p.log[0].date)}</span> — {p.log[0].text}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── INFO BOX ───────────────────────────────────────────────────────────────
+
+function InfoBox({ label, text, color }) {
+  return (
+    <div style={{ background: "#f8fafc", borderRadius: 10, padding: "12px 14px" }}>
+      <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color, letterSpacing: "0.5px", marginBottom: 4 }}>{label.toUpperCase()}</p>
+      <p style={{ margin: 0, fontSize: 13, color: "#334155", lineHeight: 1.5 }}>{text}</p>
+    </div>
+  );
+}
+
+// ─── PROJECT ROW ────────────────────────────────────────────────────────────
+
+function ProjectRow({ project: p, onClick }) {
+  const days = daysSince(p.lastTouched);
+  const subsDone = p.subtasks.filter((s) => s.done).length;
+  const total = p.subtasks.length;
+
+  return (
+    <div onClick={onClick} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, transition: "box-shadow 0.15s" }}
+      onMouseEnter={(e) => e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.07)"}
+      onMouseLeave={(e) => e.currentTarget.style.boxShadow = "none"}>
+      <div style={{ width: 4, height: 40, borderRadius: 99, background: p.color, flexShrink: 0 }} />
+      <span style={{ fontSize: 22 }}>{p.emoji}</span>
+      <div style={{ flex: 1 }}>
+        <p style={{ margin: 0, fontWeight: 700, fontSize: 14, letterSpacing: "-0.3px" }}>{p.name}</p>
+        <p style={{ margin: "3px 0 0", fontSize: 12, color: "#94a3b8" }}>{p.bottleneck}</p>
+      </div>
+      {total > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <div style={{ width: 60, height: 4, background: "#e2e8f0", borderRadius: 99, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${(subsDone / total) * 100}%`, background: p.color, borderRadius: 99 }} />
+          </div>
+          <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>{subsDone}/{total}</span>
+        </div>
+      )}
+      <span style={{ fontSize: 11, color: days > 3 ? "#ef4444" : "#94a3b8", background: days > 3 ? "#fef2f2" : "#f1f5f9", borderRadius: 99, padding: "3px 10px", fontWeight: 600, flexShrink: 0 }}>
+        {days === 0 ? "I dag" : `${days}d siden`}
+      </span>
+      <span style={{ color: "#cbd5e1", fontSize: 16 }}>›</span>
+    </div>
+  );
+}
+
+// ─── PROJECT DETAIL ──────────────────────────────────────────────────────────
+
+function ProjectDetail({ project: p, onBack, onUpdateField, onAddLog, onMarkLogDone, onToggleSub, logInput, setLogInput }) {
+  const [editField, setEditField] = useState(null);
+  const [editVal, setEditVal] = useState("");
+  const subsDone = p.subtasks.filter((s) => s.done).length;
+
+  const startEdit = (field) => { setEditField(field); setEditVal(p[field]); };
+  const saveEdit = () => { onUpdateField(editField, editVal); setEditField(null); };
+
+  const fields = [
+    { key: "goal", label: "Mål", color: "#6366f1" },
+    { key: "roadmap", label: "Roadmap", color: "#64748b" },
+    { key: "bottleneck", label: "Bottleneck", color: "#ef4444" },
+    { key: "firstStep", label: "Første skridt", color: p.color },
+  ];
+
+  return (
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: "28px 24px" }}>
+      {/* Back */}
+      <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#94a3b8", fontFamily: "inherit", padding: "0 0 20px", display: "flex", alignItems: "center", gap: 6 }}>
+        ← Tilbage
+      </button>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+        <span style={{ fontSize: 28 }}>{p.emoji}</span>
+        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, letterSpacing: "-0.5px" }}>{p.name}</h2>
+        {p.due && (
+          <span style={{ fontSize: 12, color: "#64748b", background: "#f1f5f9", borderRadius: 99, padding: "4px 12px", fontWeight: 600 }}>
+            📅 {new Date(p.due).toLocaleDateString("da-DK", { day: "numeric", month: "long" })}
+          </span>
+        )}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        {/* Left: fields + subtasks */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {fields.map(({ key, label, color }) => (
+            <div key={key} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "16px 18px" }}>
+              <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 700, color, letterSpacing: "0.5px" }}>{label.toUpperCase()}</p>
+              {editField === key ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <textarea
+                    autoFocus
+                    style={{ border: "1px solid " + color, borderRadius: 8, padding: "8px 10px", fontSize: 13, fontFamily: "inherit", resize: "none", outline: "none", lineHeight: 1.6, minHeight: 70 }}
+                    value={editVal}
+                    onChange={(e) => setEditVal(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && e.metaKey) saveEdit(); if (e.key === "Escape") setEditField(null); }}
+                  />
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={saveEdit} style={{ ...btn(color, false), padding: "6px 14px", fontSize: 12 }}>Gem ⌘↵</button>
+                    <button onClick={() => setEditField(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#94a3b8", fontFamily: "inherit" }}>Annuller</button>
+                  </div>
+                </div>
+              ) : (
+                <p onClick={() => startEdit(key)} style={{ margin: 0, fontSize: 13, color: "#334155", lineHeight: 1.6, cursor: "text", minHeight: 20 }}>
+                  {p[key] || <span style={{ color: "#cbd5e1" }}>Klik for at redigere...</span>}
+                </p>
+              )}
+            </div>
+          ))}
+
+          {/* Subtasks */}
+          {p.subtasks.length > 0 && (
+            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "16px 18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#64748b", letterSpacing: "0.5px", flex: 1 }}>NÆSTE SKRIDT</p>
+                <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>{subsDone}/{p.subtasks.length}</span>
+              </div>
+              <div style={{ height: 4, background: "#e2e8f0", borderRadius: 99, overflow: "hidden", marginBottom: 12 }}>
+                <div style={{ height: "100%", width: `${(subsDone / p.subtasks.length) * 100}%`, background: p.color, borderRadius: 99, transition: "width 0.3s" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {p.subtasks.map((s) => (
+                  <div key={s.id} onClick={() => onToggleSub(s.id)}
+                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8, cursor: "pointer", background: s.done ? "#f8fafc" : "transparent", transition: "background 0.1s" }}>
+                    <div style={{ width: 18, height: 18, borderRadius: 6, border: s.done ? "none" : "2px solid #cbd5e1", background: s.done ? p.color : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
+                      {s.done && <span style={{ color: "#fff", fontSize: 10, fontWeight: 800 }}>✓</span>}
+                    </div>
+                    <span style={{ fontSize: 13, color: s.done ? "#94a3b8" : "#1e293b", textDecoration: s.done ? "line-through" : "none", lineHeight: 1.4, transition: "all 0.15s" }}>
+                      {s.title}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right: activity log */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden", flex: 1 }}>
+            <div style={{ padding: "16px 18px", borderBottom: "1px solid #f1f5f9" }}>
+              <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#64748b", letterSpacing: "0.5px" }}>AKTIVITETSLOG</p>
+            </div>
+
+            {/* Add entry */}
+            <div style={{ padding: "12px 18px", borderBottom: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  style={{ flex: 1, border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none" }}
+                  placeholder="Hvad skete der? Hvad gjorde du?"
+                  value={logInput}
+                  onChange={(e) => setLogInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") onAddLog(logInput); }}
+                />
+                <button onClick={() => onAddLog(logInput)} style={{ ...btn(p.color, false), padding: "10px 14px" }}>↵</button>
+              </div>
+            </div>
+
+            {/* Log entries — timeline */}
+            <div style={{ padding: "8px 0", overflowY: "auto", maxHeight: 480 }}>
+              {p.log.length === 0 && (
+                <p style={{ margin: 0, padding: "20px 18px", fontSize: 13, color: "#cbd5e1", textAlign: "center" }}>Ingen aktivitet endnu.</p>
+              )}
+              {p.log.map((entry, i) => (
+                <div key={entry.id} style={{ display: "flex", gap: 12, padding: "10px 18px", position: "relative" }}>
+                  {/* Timeline line */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                    <div onClick={() => onMarkLogDone(entry.id)}
+                      style={{ width: 14, height: 14, borderRadius: "50%", border: entry.done ? "none" : `2px solid ${p.color}44`, background: entry.done ? p.color : "#fff", cursor: "pointer", flexShrink: 0, marginTop: 2, transition: "all 0.15s", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {entry.done && <span style={{ color: "#fff", fontSize: 8, fontWeight: 800 }}>✓</span>}
+                    </div>
+                    {i < p.log.length - 1 && (
+                      <div style={{ width: 1, flex: 1, background: "#f1f5f9", marginTop: 4 }} />
+                    )}
+                  </div>
+                  <div style={{ flex: 1, paddingBottom: 8 }}>
+                    <p style={{ margin: 0, fontSize: 11, color: "#94a3b8", marginBottom: 3 }}>{fmt(entry.date)}</p>
+                    <p style={{ margin: 0, fontSize: 13, color: entry.done ? "#94a3b8" : "#334155", lineHeight: 1.5, textDecoration: entry.done ? "line-through" : "none" }}>
+                      {entry.text}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
