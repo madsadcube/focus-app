@@ -319,7 +319,7 @@ export default function App() {
             />
           ) : (
             <div style={{ maxWidth: 760, width: "100%", margin: "0 auto", padding: "40px 36px" }}>
-              {nav === "kalender" && <CalendarView tasks={tasks} goals={goals} onToggle={toggleTask} onOpenTask={setOpenTaskId} openTaskId={openTaskId} onSnooze={snoozeTask} />}
+              {nav === "kalender" && <CalendarView tasks={tasks} goals={goals} onToggle={toggleTask} onOpenTask={setOpenTaskId} openTaskId={openTaskId} onSnooze={snoozeTask} selectedIds={selectedIds} onSelect={toggleSelect} />}
               {nav === "issues"  && <IssuesView tasks={tasks} onToggle={toggleTask} onAdd={() => setAdding(true)} onOpenTask={setOpenTaskId} openTaskId={openTaskId} selectedIds={selectedIds} onSelect={toggleSelect} />}
               {nav === "maal"    && (
                 <div>
@@ -893,7 +893,7 @@ function LogInput({ areaColor, onSubmit }) {
 
 // ─── CALENDAR VIEW ───────────────────────────────────────────────────────────
 
-function CalendarView({ tasks, goals, onToggle, onOpenTask, openTaskId, onSnooze }) {
+function CalendarView({ tasks, goals, onToggle, onOpenTask, openTaskId, onSnooze, selectedIds, onSelect }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -928,7 +928,7 @@ function CalendarView({ tasks, goals, onToggle, onOpenTask, openTaskId, onSnooze
         <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e3e6ea", overflow: "hidden" }}>
           {ts.map((t, i) => (
             <div key={t.id} style={{ borderTop: i > 0 ? "1px solid #f5f1eb" : "none" }}>
-              <CalRow task={t} onToggle={onToggle} onOpen={onOpenTask} isOpen={openTaskId === t.id} onSnooze={onSnooze} />
+              <CalRow task={t} onToggle={onToggle} onOpen={onOpenTask} isOpen={openTaskId === t.id} onSnooze={onSnooze} selected={selectedIds?.includes(t.id)} onSelect={onSelect} />
             </div>
           ))}
         </div>
@@ -970,7 +970,7 @@ function CalendarView({ tasks, goals, onToggle, onOpenTask, openTaskId, onSnooze
   );
 }
 
-function CalRow({ task: t, onToggle, onOpen, isOpen, onSnooze, snoozed }) {
+function CalRow({ task: t, onToggle, onOpen, isOpen, onSnooze, snoozed, selected, onSelect }) {
   const [hover, setHover] = useState(false);
   const [showSnooze, setShowSnooze] = useState(false);
   const area = AREAS[t.area];
@@ -978,9 +978,16 @@ function CalRow({ task: t, onToggle, onOpen, isOpen, onSnooze, snoozed }) {
 
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setShowSnooze(false); }}
-      style={{ padding: "9px 14px", display: "flex", alignItems: "center", gap: 10, background: isOpen ? "#f5f1eb" : hover ? "#f8f9fb" : "transparent", transition: "background 0.1s" }}>
-      <button onClick={() => onToggle(t.id)}
-        style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${area?.color || "#b8bfcc"}`, background: "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }} />
+      style={{ padding: "9px 14px", display: "flex", alignItems: "center", gap: 10, background: selected ? "#eef2ff" : isOpen ? "#f5f1eb" : hover ? "#f8f9fb" : "transparent", transition: "background 0.1s" }}>
+      {onSelect ? (
+        <button onClick={() => onSelect(t.id)} title={selected ? "Fravælg" : "Vælg"}
+          style={{ width: 16, height: 16, borderRadius: 4, border: selected ? "none" : `1.5px solid ${hover || selected ? "#6366f1" : "#d4cfc9"}`, background: selected ? "#6366f1" : hover ? "#ede9fe" : "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", opacity: selected || hover ? 1 : 0 }}>
+          {selected && <span style={{ color: "#fff", fontSize: 8, fontWeight: 900 }}>✓</span>}
+        </button>
+      ) : (
+        <button onClick={() => onToggle(t.id)}
+          style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${area?.color || "#b8bfcc"}`, background: "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }} />
+      )}
       <span onClick={() => onOpen(t.id)}
         style={{ flex: 1, fontSize: 13, color: "#1e293b", cursor: "pointer", lineHeight: 1.4 }}>
         {t.title}
