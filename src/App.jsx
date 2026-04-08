@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
+
+const DragCtx = createContext(null);
 import { AREAS, FLAGS, STATUSES, OWN_COMPANIES, CLIENTS, ALL_WORKSPACES, INIT_GOALS, INIT_TASKS, INIT_ROUTINES, INIT_SEO_PAGES, INIT_RETAINERS, INIT_PROJECTS } from "./data.js";
 
 const nowISO = () => new Date().toISOString();
@@ -65,6 +67,9 @@ export default function App() {
   const [newNotes, setNewNotes]         = useState("");
   const [selectedIds, setSelectedIds]   = useState([]);
   const [bulkDate, setBulkDate]         = useState("");
+  const [showCal, setShowCal]           = useState(false);
+  const [draggingId, setDraggingId]     = useState(null);
+  const [calMonth, setCalMonth]         = useState(() => { const n = new Date(); return { year: n.getFullYear(), month: n.getMonth() }; });
 
   const toggleSelect = (id) => setSelectedIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
   const clearSelection = () => setSelectedIds([]);
@@ -216,6 +221,7 @@ export default function App() {
   ];
 
   return (
+    <DragCtx.Provider value={{ draggingId, setDraggingId }}>
     <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif", background: BG, color: "#111827", overflow: "hidden" }}>
 
       {/* ── TIMER FLOATING ── */}
@@ -280,10 +286,15 @@ export default function App() {
             })}
           </SidebarSection>
         </div>
-        <div style={{ padding: "10px 10px 14px", borderTop: "1px solid #f3f4f6" }}>
+        <div style={{ padding: "10px 10px 14px", borderTop: "1px solid #f3f4f6", display: "flex", flexDirection: "column", gap: 6 }}>
           <button onClick={() => setAdding(true)}
             style={{ width: "100%", background: "#4f46e5", border: "none", borderRadius: 7, padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#fff", textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 14, lineHeight: 1 }}>+</span> Ny opgave
+          </button>
+          <button onClick={() => setShowCal(v => !v)}
+            style={{ width: "100%", background: showCal ? "#eff0ff" : "none", border: showCal ? "none" : "1px solid #e8ecf0", borderRadius: 7, padding: "6px 12px", fontSize: 12, fontWeight: showCal ? 600 : 400, cursor: "pointer", fontFamily: "inherit", color: showCal ? "#4f46e5" : "#9ca3af", textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+            Kalender-panel
           </button>
         </div>
       </aside>
@@ -393,8 +404,20 @@ export default function App() {
             onStopTimer={stopTimer}
           />
         )}
+
+        {/* ── CALENDAR PANEL ── */}
+        {showCal && (
+          <CalendarPanel
+            tasks={tasks}
+            month={calMonth}
+            onChangeMonth={setCalMonth}
+            onDropTask={(taskId, date) => updateTask(taskId, { due: date })}
+            onOpenTask={setOpenTaskId}
+          />
+        )}
       </div>
     </div>
+    </DragCtx.Provider>
   );
 }
 
@@ -1162,6 +1185,7 @@ function PageHeader({ title, subtitle, right }) {
 function TaskLine({ task: t, onToggle, onOpen, showClient, isOpen, onSetStatus, onSnooze, selected, onSelect }) {
   const [hover, setHover] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const { setDraggingId } = useContext(DragCtx) || {};
   const area = AREAS[t.area];
   const flag = FLAGS[t.flag];
   const status = STATUSES[t.status] || STATUSES["todo"];
@@ -1169,8 +1193,12 @@ function TaskLine({ task: t, onToggle, onOpen, showClient, isOpen, onSetStatus, 
   const done = t.status === "done";
 
   return (
-    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setStatusOpen(false); }}
-      style={{ display: "flex", alignItems: "center", padding: "0 12px 0 8px", minHeight: 36, background: selected ? "#eef2ff" : isOpen ? "#f5f6ff" : hover ? "#f8f9fb" : "#fff", transition: "background 0.08s", cursor: "default", position: "relative" }}>
+    <div
+      draggable
+      onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDraggingId?.(t.id); }}
+      onDragEnd={() => setDraggingId?.(null)}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setStatusOpen(false); }}
+      style={{ display: "flex", alignItems: "center", padding: "0 12px 0 8px", minHeight: 36, background: selected ? "#eef2ff" : isOpen ? "#f5f6ff" : hover ? "#f8f9fb" : "#fff", transition: "background 0.08s", cursor: "grab", position: "relative" }}>
 
       {/* Checkbox — hover/selected */}
       <div style={{ width: 28, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1390,6 +1418,95 @@ function TaskGroup({ label, color, tasks, onToggle, onOpenTask, openTaskId, show
         </button>
       )}
       <div style={{ height: 20 }} />
+    </div>
+  );
+}
+
+// ─── CALENDAR PANEL ──────────────────────────────────────────────────────────
+
+function CalendarPanel({ tasks, month, onChangeMonth, onDropTask, onOpenTask }) {
+  const { draggingId } = useContext(DragCtx) || {};
+  const [dragOver, setDragOver] = useState(null);
+  const { year, month: m } = month;
+
+  const firstDow = new Date(year, m, 1).getDay(); // 0=Sun
+  const startOffset = (firstDow + 6) % 7;         // Mon-first
+  const daysInMonth = new Date(year, m + 1, 0).getDate();
+  const monthLabel = new Date(year, m, 1).toLocaleDateString("da-DK", { month: "long", year: "numeric" });
+
+  const prevMonth = () => onChangeMonth(m === 0 ? { year: year - 1, month: 11 } : { year, month: m - 1 });
+  const nextMonth = () => onChangeMonth(m === 11 ? { year: year + 1, month: 0 } : { year, month: m + 1 });
+
+  const ds = (d) => `${year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const today = new Date();
+  const isToday = (d) => today.getFullYear() === year && today.getMonth() === m && today.getDate() === d;
+
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const dayTasks = (d) => tasks.filter((t) => t.due === ds(d) && t.status !== "done");
+
+  return (
+    <div style={{ width: 264, borderLeft: "1px solid #e8ecf0", background: "#fafafa", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", zIndex: 10 }}>
+      {/* Header */}
+      <div style={{ padding: "14px 14px 10px", borderBottom: "1px solid #f0f1f3", display: "flex", alignItems: "center", gap: 6 }}>
+        <button onClick={prevMonth} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: "0 4px", lineHeight: 1 }}>‹</button>
+        <span style={{ flex: 1, textAlign: "center", fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>{monthLabel}</span>
+        <button onClick={nextMonth} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: "0 4px", lineHeight: 1 }}>›</button>
+      </div>
+
+      {/* Day-of-week labels */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "8px 8px 2px" }}>
+        {["M","T","O","T","F","L","S"].map((d, i) => (
+          <div key={i} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, color: "#b8bfcc", letterSpacing: "0.3px", padding: "3px 0" }}>{d}</div>
+        ))}
+      </div>
+
+      {/* Days grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "0 8px 8px", gap: 2, flex: 1, alignContent: "start", overflowY: "auto" }}>
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} />;
+          const date = ds(d);
+          const isDragOver = dragOver === date && !!draggingId;
+          const todayDay = isToday(d);
+          const dt = dayTasks(d);
+
+          return (
+            <div key={i}
+              onDragOver={(e) => { if (draggingId) { e.preventDefault(); setDragOver(date); }}}
+              onDragLeave={() => setDragOver(null)}
+              onDrop={(e) => { e.preventDefault(); if (draggingId) { onDropTask(draggingId, date); setDragOver(null); }}}
+              style={{
+                minHeight: 38, padding: "3px 2px 4px", borderRadius: 6, cursor: draggingId ? "copy" : "default",
+                background: isDragOver ? "#ede9fe" : "transparent",
+                border: isDragOver ? "1.5px dashed #6366f1" : "1.5px solid transparent",
+                transition: "all 0.08s", boxSizing: "border-box"
+              }}>
+              <div style={{
+                width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 3px",
+                background: todayDay ? "#4f46e5" : "transparent",
+                fontSize: 11, fontWeight: todayDay ? 700 : 400,
+                color: todayDay ? "#fff" : isDragOver ? "#4f46e5" : "#374151"
+              }}>{d}</div>
+              {dt.slice(0, 3).map((t) => (
+                <div key={t.id}
+                  onClick={() => onOpenTask(t.id)}
+                  title={t.title}
+                  style={{ width: "100%", height: 3, borderRadius: 2, marginBottom: 2, background: AREAS[t.area]?.color || "#6366f1", cursor: "pointer", opacity: 0.8 }} />
+              ))}
+              {dt.length > 3 && <div style={{ fontSize: 8, color: "#9ca3af", textAlign: "center", lineHeight: 1.2 }}>+{dt.length - 3}</div>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Task list for selected (drag hint) */}
+      {draggingId && (
+        <div style={{ padding: "10px 14px", borderTop: "1px solid #f0f1f3", background: "#f0f0ff" }}>
+          <p style={{ margin: 0, fontSize: 11, color: "#4f46e5", fontWeight: 600 }}>Slip på en dag for at sætte deadline</p>
+        </div>
+      )}
     </div>
   );
 }
