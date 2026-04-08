@@ -22,7 +22,8 @@ const fmtDue = (iso) => {
 };
 
 
-const BG = "#f7f8fa";
+const BG = "#ffffff";
+const SIDEBAR_BG = "#f7f8fa";
 const SIDEBAR_W = 228;
 const PANEL_MIN = 320;
 const PANEL_MAX = 640;
@@ -215,7 +216,7 @@ export default function App() {
   ];
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif", background: BG, color: "#1e1f21", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif", background: BG, color: "#111827", overflow: "hidden" }}>
 
       {/* ── TIMER FLOATING ── */}
       {timer.taskId && (
@@ -228,7 +229,7 @@ export default function App() {
       )}
 
       {/* ── SIDEBAR ── */}
-      <aside style={{ width: SIDEBAR_W, flexShrink: 0, background: "#fff", borderRight: "1px solid #e8ecf0", display: "flex", flexDirection: "column", overflow: "hidden", zIndex: 10 }}>
+      <aside style={{ width: SIDEBAR_W, flexShrink: 0, background: SIDEBAR_BG, borderRight: "1px solid #e8ecf0", display: "flex", flexDirection: "column", overflow: "hidden", zIndex: 10 }}>
         <div style={{ padding: "16px 14px 10px", display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 22, height: 22, borderRadius: 6, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <span style={{ color: "#fff", fontSize: 11, fontWeight: 800 }}>F</span>
@@ -321,7 +322,7 @@ export default function App() {
               onEditGoalLog={updateGoalLogEntry}
             />
           ) : (
-            <div style={{ maxWidth: 760, width: "100%", margin: "0 auto", padding: "40px 36px" }}>
+            <div style={{ maxWidth: 900, width: "100%", margin: "0 auto", padding: "32px 40px" }}>
               {nav === "kalender" && <CalendarView tasks={tasks} goals={goals} onToggle={toggleTask} onOpenTask={setOpenTaskId} openTaskId={openTaskId} onSnooze={snoozeTask} selectedIds={selectedIds} onSelect={toggleSelect} />}
               {nav === "issues"  && <IssuesView tasks={tasks} onToggle={toggleTask} onAdd={() => setAdding(true)} onOpenTask={setOpenTaskId} openTaskId={openTaskId} selectedIds={selectedIds} onSelect={toggleSelect} />}
               {nav === "maal"    && (
@@ -923,14 +924,14 @@ function CalendarView({ tasks, goals, onToggle, onOpenTask, openTaskId, onSnooze
     if (ts.length === 0) return null;
     return (
       <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, padding: "0 4px" }}>
-          <span style={{ width: 3, height: 14, borderRadius: 99, background: color, display: "inline-block", flexShrink: 0 }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#374151", letterSpacing: "0.4px", textTransform: "uppercase" }}>{label}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px 10px 8px" }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#111827" }}>{label}</span>
           <span style={{ fontSize: 11, color: "#9ca3af", background: "#f3f4f6", borderRadius: 99, padding: "1px 7px", fontWeight: 500 }}>{ts.length}</span>
         </div>
-        <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e8ecf0", overflow: "hidden" }}>
+        <div style={{ borderTop: "1px solid #f3f4f6" }}>
           {ts.map((t, i) => (
-            <div key={t.id} style={{ borderTop: i > 0 ? "1px solid #f3f4f6" : "none" }}>
+            <div key={t.id} style={{ borderBottom: "1px solid #f9fafb" }}>
               <CalRow task={t} onToggle={onToggle} onOpen={onOpenTask} isOpen={openTaskId === t.id} onSnooze={onSnooze} selected={selectedIds?.includes(t.id)} onSelect={onSelect} />
             </div>
           ))}
@@ -1190,10 +1191,16 @@ function TaskLine({ task: t, onToggle, onOpen, showClient, isOpen, onSetStatus, 
       <div style={{ position: "relative", flexShrink: 0, marginRight: 8 }}>
         <button onClick={() => onSetStatus ? setStatusOpen(!statusOpen) : onToggle(t.id)}
           title={status.label}
-          style={{ width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${done ? status.color : hover ? status.color + "80" : "#d1d5db"}`, background: done ? status.color : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.12s", flexShrink: 0 }}>
-          {done && <span style={{ color: "#fff", fontSize: 8, fontWeight: 900 }}>✓</span>}
-          {t.status === "in-progress" && !done && <span style={{ fontSize: 8, color: status.color }}>◑</span>}
-          {t.status === "waiting" && !done && <span style={{ fontSize: 8, color: status.color }}>◷</span>}
+          style={{ width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${done ? status.color : hover ? status.color : "#d1d5db"}`, background: done ? status.color : t.status === "in-progress" ? status.color + "20" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.12s", flexShrink: 0, position: "relative" }}>
+          {done && (
+            <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          )}
+          {t.status === "in-progress" && !done && (
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: status.color }} />
+          )}
+          {t.status === "waiting" && !done && (
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: status.color, opacity: 0.6 }} />
+          )}
         </button>
         {statusOpen && onSetStatus && (
           <div style={{ position: "absolute", left: 0, top: "100%", marginTop: 4, background: "#fff", border: "1px solid #e8ecf0", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.10)", zIndex: 200, minWidth: 160, padding: 6 }}>
@@ -1356,35 +1363,32 @@ function TasksByAreaView({ tasks, onToggle, onOpenTask, openTaskId, showClient, 
 function TaskGroup({ label, color, tasks, onToggle, onOpenTask, openTaskId, showClient, collapsed: initCollapsed, onSetStatus, onSnooze, selectedIds, onSelect }) {
   const [open, setOpen] = useState(!initCollapsed);
   return (
-    <div style={{ marginBottom: 28 }}>
-      {/* Group header */}
-      <button onClick={() => setOpen(!open)}
-        style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "6px 4px", width: "100%", marginBottom: 4 }}>
-        <span style={{ fontSize: 9, color: "#b8bfcc", transform: open ? "rotate(90deg)" : "rotate(0deg)", display: "inline-block", transition: "transform 0.15s", marginRight: 2 }}>▶</span>
-        <span style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: "0.4px", textTransform: "uppercase" }}>{label}</span>
-        <span style={{ fontSize: 11, color: "#b8bfcc", fontWeight: 500, background: "#f1f5f9", borderRadius: 99, padding: "1px 7px" }}>{tasks.length}</span>
-        <span style={{ fontSize: 10, color: "#d1d5db" }}>···</span>
-        <span style={{ fontSize: 10, color: "#d1d5db" }}>+</span>
-      </button>
-      {open && (
-        <div style={{ background: "#fff", border: "1px solid #e8ecf0", borderRadius: 10, overflow: "hidden" }}>
-          {/* Column headers */}
-          <div style={{ display: "flex", alignItems: "center", padding: "6px 12px 6px 40px", borderBottom: "1px solid #f1f3f5", gap: 0 }}>
-            <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: "#9ca3af", letterSpacing: "0.2px" }}>Navn</span>
-            {showClient && <span style={{ width: 120, fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>Klient</span>}
-            <span style={{ width: 110, fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>Deadline</span>
-            <span style={{ width: 90, fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>Område</span>
-          </div>
-          {tasks.map((t, i) => (
-            <div key={t.id} style={{ borderTop: i > 0 ? "1px solid #f5f6f8" : "none" }}>
-              <TaskLine task={t} onToggle={onToggle} onOpen={onOpenTask} showClient={showClient} isOpen={openTaskId === t.id} onSetStatus={onSetStatus} onSnooze={onSnooze} selected={selectedIds?.includes(t.id)} onSelect={onSelect} />
-            </div>
-          ))}
-          {tasks.length === 0 && (
-            <div style={{ padding: "14px 40px", fontSize: 12, color: "#b8bfcc" }}>Ingen opgaver</div>
-          )}
+    <div style={{ marginBottom: 0 }}>
+      {/* Group header row */}
+      <div style={{ display: "flex", alignItems: "center", padding: "10px 12px 10px 8px", borderBottom: "1px solid #f3f4f6", position: "sticky", top: 0, background: "#fff", zIndex: 2 }}>
+        <button onClick={() => setOpen(!open)}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "2px 4px", marginRight: 4 }}>
+          <svg style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.15s", flexShrink: 0 }} width="10" height="10" fill="none" viewBox="0 0 24 24">
+            <path d="M9 18l6-6-6-6" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#111827" }}>{label}</span>
+          <span style={{ fontSize: 11, color: "#9ca3af", background: "#f3f4f6", borderRadius: 99, padding: "1px 7px", fontWeight: 500, minWidth: 20, textAlign: "center" }}>{tasks.length}</span>
+        </button>
+        <div style={{ flex: 1 }} />
+        {showClient && <span style={{ width: 130, fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>Klient</span>}
+        <span style={{ width: 110, fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>Deadline</span>
+        <span style={{ width: 90, fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>Område</span>
+      </div>
+      {open && tasks.map((t, i) => (
+        <div key={t.id} style={{ borderBottom: "1px solid #f9fafb" }}>
+          <TaskLine task={t} onToggle={onToggle} onOpen={onOpenTask} showClient={showClient} isOpen={openTaskId === t.id} onSetStatus={onSetStatus} onSnooze={onSnooze} selected={selectedIds?.includes(t.id)} onSelect={onSelect} />
         </div>
+      ))}
+      {open && tasks.length === 0 && (
+        <div style={{ padding: "12px 52px", fontSize: 12, color: "#9ca3af" }}>Ingen opgaver</div>
       )}
+      <div style={{ height: 16 }} />
     </div>
   );
 }
