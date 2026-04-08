@@ -1,7 +1,7 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, useRef } from "react";
+import { AREAS, FLAGS, STATUSES, OWN_COMPANIES, CLIENTS, ALL_WORKSPACES, INIT_GOALS, INIT_TASKS, INIT_ROUTINES, INIT_SEO_PAGES, INIT_RETAINERS, INIT_PROJECTS } from "./data.js";
 
 const DragCtx = createContext(null);
-import { AREAS, FLAGS, STATUSES, OWN_COMPANIES, CLIENTS, ALL_WORKSPACES, INIT_GOALS, INIT_TASKS, INIT_ROUTINES, INIT_SEO_PAGES, INIT_RETAINERS, INIT_PROJECTS } from "./data.js";
 
 const nowISO = () => new Date().toISOString();
 const fmtDate = (iso) => {
@@ -69,6 +69,7 @@ export default function App() {
   const [bulkDate, setBulkDate]         = useState("");
   const [showCal, setShowCal]           = useState(false);
   const [draggingId, setDraggingId]     = useState(null);
+  const [dragMode, setDragMode]         = useState("new"); // "new" | "move"
   const [calDate, setCalDate]           = useState(() => new Date());
 
   const toggleSelect = (id) => setSelectedIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
@@ -221,7 +222,7 @@ export default function App() {
   ];
 
   return (
-    <DragCtx.Provider value={{ draggingId, setDraggingId }}>
+    <DragCtx.Provider value={{ draggingId, setDraggingId, dragMode, setDragMode }}>
     <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif", background: BG, color: "#111827", overflow: "hidden" }}>
 
       {/* ── TIMER FLOATING ── */}
@@ -411,7 +412,8 @@ export default function App() {
             tasks={tasks}
             date={calDate}
             onChangeDate={setCalDate}
-            onScheduleTask={(taskId, date, hour, half) => updateTask(taskId, { scheduledDate: date, scheduledHour: hour, scheduledHalf: half })}
+            onScheduleTask={(taskId, date, hour, half, duration) => updateTask(taskId, { scheduledDate: date, scheduledHour: hour, scheduledHalf: half || 0, scheduledDuration: duration || 1 })}
+            onUpdateTask={(taskId, changes) => updateTask(taskId, changes)}
           />
         )}
       </div>
@@ -1184,7 +1186,7 @@ function PageHeader({ title, subtitle, right }) {
 function TaskLine({ task: t, onToggle, onOpen, showClient, isOpen, onSetStatus, onSnooze, selected, onSelect }) {
   const [hover, setHover] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
-  const { setDraggingId } = useContext(DragCtx) || {};
+  const { setDraggingId, setDragMode } = useContext(DragCtx) || {};
   const area = AREAS[t.area];
   const flag = FLAGS[t.flag];
   const status = STATUSES[t.status] || STATUSES["todo"];
@@ -1194,8 +1196,8 @@ function TaskLine({ task: t, onToggle, onOpen, showClient, isOpen, onSetStatus, 
   return (
     <div
       draggable
-      onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDraggingId?.(t.id); }}
-      onDragEnd={() => setDraggingId?.(null)}
+      onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDragMode?.("new"); setDraggingId?.(t.id); }}
+      onDragEnd={() => { setDraggingId?.(null); }}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setStatusOpen(false); }}
       style={{ display: "flex", alignItems: "center", padding: "0 12px 0 8px", minHeight: 36, background: selected ? "#eef2ff" : isOpen ? "#f5f6ff" : hover ? "#f8f9fb" : "#fff", transition: "background 0.08s", cursor: "grab", position: "relative" }}>
 
@@ -1333,7 +1335,12 @@ function TasksView({ tasks, goals, onToggle, onOpenGoal, onOpenTask, openTaskId,
   const [groupBy, setGroupBy] = useState("maal");
   const open = tasks.filter((t) => t.status !== "done");
   const done = tasks.filter((t) => t.status === "done");
-  const views = [{ key: "maal", label: "Mål" }, { key: "omraade", label: "Område" }, { key: "board", label: "Board" }];
+  const views = [
+    { key: "maal",    label: "Mål" },
+    { key: "omraade", label: "Område" },
+    { key: "klient",  label: "Klient" },
+    { key: "board",   label: "Board" },
+  ];
 
   return (
     <div>
@@ -1342,7 +1349,7 @@ function TasksView({ tasks, goals, onToggle, onOpenGoal, onOpenTask, openTaskId,
           <div style={{ display: "flex", gap: 4, background: "#e3e6ea", borderRadius: 8, padding: 3 }}>
             {views.map(({ key, label }) => (
               <button key={key} onClick={() => setGroupBy(key)}
-                style={{ background: groupBy === key ? "#fff" : "transparent", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: groupBy === key ? 700 : 500, cursor: "pointer", fontFamily: "inherit", color: groupBy === key ? "#1e293b" : "#5e6470", boxShadow: groupBy === key ? "0 1px 3px rgba(0,0,0,0.08)" : "none" }}>
+                style={{ background: groupBy === key ? "#fff" : "transparent", border: "none", borderRadius: 6, padding: "5px 11px", fontSize: 11, fontWeight: groupBy === key ? 700 : 500, cursor: "pointer", fontFamily: "inherit", color: groupBy === key ? "#1e293b" : "#5e6470", boxShadow: groupBy === key ? "0 1px 3px rgba(0,0,0,0.08)" : "none" }}>
                 {label}
               </button>
             ))}
@@ -1352,6 +1359,22 @@ function TasksView({ tasks, goals, onToggle, onOpenGoal, onOpenTask, openTaskId,
       {groupBy === "board"   && <BoardView tasks={tasks} onOpenTask={onOpenTask} openTaskId={openTaskId} onSetStatus={onSetStatus} />}
       {groupBy === "maal"    && <><TasksByGoalView tasks={open} goals={goals} onToggle={onToggle} onOpenGoal={onOpenGoal} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} onAddTask={onAddTask} selectedIds={selectedIds} onSelect={onSelect} />{done.length > 0 && <TaskGroup label="Udført" color="#b8bfcc" tasks={done} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} collapsed selectedIds={selectedIds} onSelect={onSelect} />}</>}
       {groupBy === "omraade" && <><TasksByAreaView tasks={open} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} onAddTask={onAddTask} selectedIds={selectedIds} onSelect={onSelect} />{done.length > 0 && <TaskGroup label="Udført" color="#b8bfcc" tasks={done} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} collapsed selectedIds={selectedIds} onSelect={onSelect} />}</>}
+      {groupBy === "klient"  && <><TasksByClientView tasks={open} goals={goals} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} onSetStatus={onSetStatus} onSnooze={onSnooze} onAddTask={onAddTask} selectedIds={selectedIds} onSelect={onSelect} />{done.length > 0 && <TaskGroup label="Udført" color="#b8bfcc" tasks={done} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={false} onSetStatus={onSetStatus} onSnooze={onSnooze} collapsed selectedIds={selectedIds} onSelect={onSelect} />}</>}
+    </div>
+  );
+}
+
+function TasksByClientView({ tasks, goals, onToggle, onOpenTask, openTaskId, onSetStatus, onSnooze, onAddTask, selectedIds, onSelect }) {
+  const clients = [...new Set(tasks.map((t) => t.client).filter(Boolean))].sort();
+  const noClient = tasks.filter((t) => !t.client);
+  return (
+    <div>
+      {clients.map((client) => {
+        const color = goals.find((g) => g.client === client)?.color || "#94a3b8";
+        const ct = tasks.filter((t) => t.client === client);
+        return <TaskGroup key={client} label={client} color={color} tasks={ct} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={false} onAddTask={onAddTask} onSetStatus={onSetStatus} onSnooze={onSnooze} selectedIds={selectedIds} onSelect={onSelect} />;
+      })}
+      {noClient.length > 0 && <TaskGroup label="Ingen klient" color="#b8bfcc" tasks={noClient} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={false} onAddTask={onAddTask} onSetStatus={onSetStatus} onSnooze={onSnooze} selectedIds={selectedIds} onSelect={onSelect} />}
     </div>
   );
 }
@@ -1423,123 +1446,227 @@ function TaskGroup({ label, color, tasks, onToggle, onOpenTask, openTaskId, show
 
 // ─── DAY PLAN PANEL (Timely-style) ───────────────────────────────────────────
 
-const PLAN_START = 7;   // 07:00
-const PLAN_END   = 20;  // 20:00
-const SLOT_H     = 30;  // px per 30-min slot
+const PLAN_START   = 7;   // 07:00
+const PLAN_END     = 21;  // 21:00
+const SLOT_H       = 32;  // px per 30-min slot
+const LABEL_W      = 42;  // px for time labels
+const TOTAL_SLOTS  = (PLAN_END - PLAN_START) * 2;
 
-function DayPlanPanel({ tasks, date, onChangeDate, onScheduleTask }) {
-  const { draggingId } = useContext(DragCtx) || {};
-  const [dragOver, setDragOver] = useState(null);
+function DayPlanPanel({ tasks, date, onChangeDate, onScheduleTask, onUpdateTask }) {
+  const { draggingId, dragMode, setDraggingId, setDragMode } = useContext(DragCtx) || {};
+  const timelineRef = useRef(null);
+  const [dragOverSlot, setDragOverSlot] = useState(null);
+  const [resizeState, setResizeState] = useState(null);    // { taskId, startY, startDur }
+  const [resizeDur, setResizeDur]       = useState(null);  // live preview duration
 
   const isoDate = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
-  const isToday = new Date().toDateString() === date.toDateString();
-  const nowHour = new Date().getHours();
-  const nowMin  = new Date().getMinutes();
+  const isToday  = new Date().toDateString() === date.toDateString();
   const dayLabel = date.toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "short" });
+  const now      = new Date();
 
-  const prevDay = () => { const d = new Date(date); d.setDate(d.getDate()-1); onChangeDate(d); };
-  const nextDay = () => { const d = new Date(date); d.setDate(d.getDate()+1); onChangeDate(d); };
-  const goToday = () => onChangeDate(new Date());
+  const prevDay  = () => { const d = new Date(date); d.setDate(d.getDate()-1); onChangeDate(d); };
+  const nextDay  = () => { const d = new Date(date); d.setDate(d.getDate()+1); onChangeDate(d); };
+  const goToday  = () => onChangeDate(new Date());
 
-  // Build 30-min slots from PLAN_START to PLAN_END
-  const slots = [];
-  for (let h = PLAN_START; h < PLAN_END; h++) {
-    slots.push({ hour: h, half: 0, key: `${h}:0` });
-    slots.push({ hour: h, half: 1, key: `${h}:1` });
-  }
-
-  // Tasks scheduled on this day
   const scheduled = tasks.filter((t) => t.scheduledDate === isoDate && t.scheduledHour != null);
 
-  // Current-time offset (px from top of timeline)
-  const nowOffsetPx = isToday
-    ? ((nowHour - PLAN_START) * 60 + nowMin) / 30 * SLOT_H
-    : null;
+  // Convert Y-px within timeline → { hour, half }
+  const slotFromY = (y) => {
+    const idx = Math.max(0, Math.min(TOTAL_SLOTS - 1, Math.floor(y / SLOT_H)));
+    return { hour: PLAN_START + Math.floor(idx / 2), half: idx % 2, idx };
+  };
+
+  // Top-px for a scheduled task
+  const taskTopPx = (t) => ((t.scheduledHour - PLAN_START) * 2 + (t.scheduledHalf || 0)) * SLOT_H;
+
+  // Height of a task block (live preview during resize)
+  const taskHeightPx = (t) => {
+    const dur = (resizeState?.taskId === t.id ? resizeDur : null) ?? (t.scheduledDuration || 1);
+    return Math.max(SLOT_H - 3, dur * SLOT_H - 3);
+  };
+
+  // ── Drag-over: calculate slot from mouse Y ──
+  const handleDragOver = (e) => {
+    if (!draggingId) return;
+    e.preventDefault();
+    const rect = timelineRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const slot = slotFromY(e.clientY - rect.top);
+    setDragOverSlot(slot);
+  };
+
+  const handleDragLeave = () => setDragOverSlot(null);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (!draggingId || !dragOverSlot) return;
+    if (dragMode === "move") {
+      // Move existing block on timeline
+      onUpdateTask(draggingId, { scheduledHour: dragOverSlot.hour, scheduledHalf: dragOverSlot.half });
+    } else {
+      // New task from list → schedule it
+      onScheduleTask(draggingId, isoDate, dragOverSlot.hour, dragOverSlot.half, 1);
+    }
+    setDragOverSlot(null);
+    setDraggingId?.(null);
+  };
+
+  // ── Resize: mouse-drag on block bottom handle ──
+  const startResize = (e, t) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startY = e.clientY;
+    const startDur = t.scheduledDuration || 1;
+    setResizeState({ taskId: t.id, startY, startDur });
+    setResizeDur(startDur);
+
+    const onMove = (ev) => {
+      const delta = ev.clientY - startY;
+      const newDur = Math.max(1, Math.min(TOTAL_SLOTS, startDur + Math.round(delta / SLOT_H)));
+      setResizeDur(newDur);
+    };
+    const onUp = (ev) => {
+      const delta = ev.clientY - startY;
+      const newDur = Math.max(1, Math.min(TOTAL_SLOTS, startDur + Math.round(delta / SLOT_H)));
+      onUpdateTask(t.id, { scheduledDuration: newDur });
+      setResizeState(null);
+      setResizeDur(null);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  // Time indicator px
+  const nowPx = isToday ? ((now.getHours() - PLAN_START) * 60 + now.getMinutes()) / 30 * SLOT_H : null;
 
   return (
-    <div style={{ width: 272, borderLeft: "1px solid #e8ecf0", background: "#fafafa", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", zIndex: 10 }}>
+    <div style={{ width: 340, borderLeft: "1px solid #e8ecf0", background: "#fafafa", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", zIndex: 10 }}>
 
-      {/* Header */}
-      <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid #f0f1f3", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
-          <button onClick={prevDay} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: "0 5px", lineHeight: 1 }}>‹</button>
+      {/* ── Header ── */}
+      <div style={{ padding: "12px 14px 8px", borderBottom: "1px solid #f0f1f3", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <button onClick={prevDay} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 17, padding: "0 5px", lineHeight: 1 }}>‹</button>
           <span style={{ flex: 1, textAlign: "center", fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>{dayLabel}</span>
-          <button onClick={nextDay} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: "0 5px", lineHeight: 1 }}>›</button>
+          <button onClick={nextDay} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 17, padding: "0 5px", lineHeight: 1 }}>›</button>
+          {!isToday && (
+            <button onClick={goToday} style={{ background: "#f3f4f6", border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 10, fontWeight: 600, color: "#6b7280", cursor: "pointer", fontFamily: "inherit", marginLeft: 4 }}>I dag</button>
+          )}
         </div>
-        {!isToday && (
-          <button onClick={goToday} style={{ width: "100%", background: "none", border: "1px solid #e8ecf0", borderRadius: 6, padding: "4px 0", fontSize: 11, color: "#6b7280", cursor: "pointer", fontFamily: "inherit" }}>
-            I dag
-          </button>
-        )}
         {scheduled.length > 0 && (
-          <div style={{ marginTop: 6, fontSize: 10, color: "#9ca3af" }}>
-            {scheduled.length} opgave{scheduled.length !== 1 ? "r" : ""} planlagt
+          <div style={{ marginTop: 5, fontSize: 10, color: "#9ca3af" }}>
+            {scheduled.length} opgave{scheduled.length !== 1 ? "r" : ""} planlagt ·{" "}
+            {Math.round(scheduled.reduce((s, t) => s + (t.scheduledDuration || 1), 0) * 0.5)}t total
           </div>
         )}
       </div>
 
-      {/* Timeline */}
-      <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
-        <div style={{ position: "relative" }}>
-          {slots.map((slot) => {
-            const isHour = slot.half === 0;
-            const isDragOver = dragOver === slot.key && !!draggingId;
-            const slotTasks = scheduled.filter((t) => t.scheduledHour === slot.hour && (t.scheduledHalf || 0) === slot.half);
+      {/* ── Timeline ── */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        <div
+          ref={timelineRef}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{ position: "relative", height: TOTAL_SLOTS * SLOT_H, cursor: draggingId ? "copy" : "default" }}>
+
+          {/* Hour/half-hour grid lines + labels */}
+          {Array.from({ length: TOTAL_SLOTS }, (_, i) => {
+            const isHour = i % 2 === 0;
+            const h = PLAN_START + Math.floor(i / 2);
+            return (
+              <div key={i} style={{
+                position: "absolute", left: 0, right: 0,
+                top: i * SLOT_H, height: SLOT_H,
+                borderTop: isHour ? "1px solid #e8ecf0" : "1px dashed #f3f4f6",
+                boxSizing: "border-box"
+              }}>
+                {isHour && (
+                  <span style={{ position: "absolute", top: 3, left: 6, fontSize: 9, fontWeight: 600, color: "#b8bfcc", letterSpacing: "0.2px", pointerEvents: "none", userSelect: "none" }}>
+                    {String(h).padStart(2,"0")}:00
+                  </span>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Drag-over highlight */}
+          {draggingId && dragOverSlot && (
+            <div style={{
+              position: "absolute",
+              top: dragOverSlot.idx * SLOT_H + 1,
+              left: LABEL_W, right: 4, height: SLOT_H - 2,
+              borderRadius: 6, background: "#ede9fe",
+              border: "1.5px dashed #6366f1",
+              pointerEvents: "none", zIndex: 5
+            }} />
+          )}
+
+          {/* Task blocks */}
+          {scheduled.map((t) => {
+            const color  = AREAS[t.area]?.color || "#6366f1";
+            const top    = taskTopPx(t);
+            const height = taskHeightPx(t);
+            const dur    = (resizeState?.taskId === t.id ? resizeDur : null) ?? (t.scheduledDuration || 1);
+            const durLabel = dur === 1 ? "30m" : dur === 2 ? "1t" : `${dur * 0.5}t`;
+            const isDone = t.status === "done";
 
             return (
-              <div key={slot.key}
-                onDragOver={(e) => { if (draggingId) { e.preventDefault(); setDragOver(slot.key); }}}
-                onDragLeave={() => setDragOver(null)}
-                onDrop={(e) => { e.preventDefault(); if (draggingId) { onScheduleTask(draggingId, isoDate, slot.hour, slot.half); setDragOver(null); }}}
+              <div key={t.id}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = "move";
+                  setDragMode?.("move");
+                  setDraggingId?.(t.id);
+                }}
+                onDragEnd={() => setDraggingId?.(null)}
                 style={{
-                  height: SLOT_H, display: "flex", alignItems: "stretch",
-                  borderTop: isHour ? "1px solid #e8ecf0" : "1px dashed #f3f4f6",
-                  background: isDragOver ? "#ede9fe" : "transparent",
-                  transition: "background 0.08s", cursor: draggingId ? "copy" : "default",
-                  position: "relative", boxSizing: "border-box"
+                  position: "absolute",
+                  top: top + 2,
+                  left: LABEL_W,
+                  right: 4,
+                  height,
+                  background: color,
+                  borderRadius: 6,
+                  padding: "4px 8px 12px",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.18)",
+                  zIndex: 10,
+                  cursor: "grab",
+                  opacity: isDone ? 0.45 : 1,
+                  overflow: "hidden",
+                  userSelect: "none",
+                  boxSizing: "border-box"
                 }}>
-                {/* Time label */}
-                <div style={{ width: 38, flexShrink: 0, paddingTop: 4, paddingLeft: 8, fontSize: 9, fontWeight: 600, color: isHour ? "#9ca3af" : "transparent", letterSpacing: "0.3px", lineHeight: 1 }}>
-                  {isHour ? `${String(slot.hour).padStart(2,"0")}:00` : ""}
-                </div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 1 }}>{t.title}</div>
+                {height >= 44 && t.client && (
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.75)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.client}</div>
+                )}
+                {height >= 54 && (
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{durLabel}</div>
+                )}
 
-                {/* Drop zone with task blocks */}
-                <div style={{ flex: 1, position: "relative", paddingRight: 6 }}>
-                  {isDragOver && <div style={{ position: "absolute", inset: "2px 4px 2px 0", borderRadius: 5, border: "1.5px dashed #6366f1", background: "#ede9fe30" }} />}
-                  {slotTasks.map((t, idx) => {
-                    const color = AREAS[t.area]?.color || "#6366f1";
-                    return (
-                      <div key={t.id}
-                        title={t.title}
-                        style={{
-                          position: "absolute",
-                          top: 2, bottom: 2,
-                          left: idx * 4,
-                          right: 0,
-                          background: color,
-                          borderRadius: 5,
-                          padding: "3px 7px",
-                          fontSize: 10, fontWeight: 600, color: "#fff",
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                          boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
-                          zIndex: idx + 1,
-                          cursor: "default",
-                          opacity: t.status === "done" ? 0.45 : 1,
-                        }}>
-                        {t.title}
-                      </div>
-                    );
-                  })}
+                {/* Resize handle */}
+                <div
+                  onMouseDown={(e) => startResize(e, t)}
+                  style={{
+                    position: "absolute", bottom: 0, left: 0, right: 0, height: 10,
+                    cursor: "ns-resize",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    borderRadius: "0 0 6px 6px",
+                    background: "rgba(0,0,0,0.15)"
+                  }}>
+                  <div style={{ width: 20, height: 2, borderRadius: 1, background: "rgba(255,255,255,0.6)" }} />
                 </div>
               </div>
             );
           })}
 
-          {/* Current time indicator */}
-          {nowOffsetPx != null && nowOffsetPx > 0 && nowOffsetPx < (PLAN_END - PLAN_START) * 2 * SLOT_H && (
-            <div style={{ position: "absolute", left: 0, right: 0, top: nowOffsetPx, zIndex: 20, pointerEvents: "none", display: "flex", alignItems: "center" }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", marginLeft: 32, flexShrink: 0 }} />
-              <div style={{ flex: 1, height: 1, background: "#ef4444", opacity: 0.7 }} />
+          {/* Now line */}
+          {nowPx != null && nowPx > 0 && nowPx < TOTAL_SLOTS * SLOT_H && (
+            <div style={{ position: "absolute", left: 0, right: 0, top: nowPx, zIndex: 20, pointerEvents: "none", display: "flex", alignItems: "center" }}>
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", marginLeft: LABEL_W - 4, flexShrink: 0 }} />
+              <div style={{ flex: 1, height: 1.5, background: "#ef4444", opacity: 0.8 }} />
             </div>
           )}
         </div>
@@ -1547,8 +1674,10 @@ function DayPlanPanel({ tasks, date, onChangeDate, onScheduleTask }) {
 
       {/* Drag hint */}
       {draggingId && (
-        <div style={{ padding: "9px 14px", borderTop: "1px solid #f0f1f3", background: "#eff0ff", flexShrink: 0 }}>
-          <p style={{ margin: 0, fontSize: 11, color: "#4f46e5", fontWeight: 600 }}>Slip på et tidspunkt for at planlægge</p>
+        <div style={{ padding: "8px 14px", borderTop: "1px solid #f0f1f3", background: "#eff0ff", flexShrink: 0 }}>
+          <p style={{ margin: 0, fontSize: 11, color: "#4f46e5", fontWeight: 600 }}>
+            {dragMode === "move" ? "Slip for at flytte til nyt tidspunkt" : "Slip for at planlægge opgaven"}
+          </p>
         </div>
       )}
     </div>
