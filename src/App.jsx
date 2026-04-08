@@ -335,7 +335,7 @@ export default function App() {
                   })}
                 </div>
               )}
-              {nav === "opgaver" && <TasksView tasks={tasks} goals={goals} onToggle={toggleTask} onOpenGoal={(id) => setOpenGoalId(id)} onOpenTask={setOpenTaskId} openTaskId={openTaskId} clientFilter={null} onSetStatus={setTaskStatus} onSnooze={snoozeTask} selectedIds={selectedIds} onSelect={toggleSelect} />}
+              {nav === "opgaver" && <TasksView tasks={tasks} goals={goals} onToggle={toggleTask} onOpenGoal={(id) => setOpenGoalId(id)} onOpenTask={setOpenTaskId} openTaskId={openTaskId} clientFilter={null} onSetStatus={setTaskStatus} onSnooze={snoozeTask} onAddTask={() => setAdding(true)} selectedIds={selectedIds} onSelect={toggleSelect} />}
               {nav === "rutiner" && (
                 <div>
                   <PageHeader title="Rutiner" subtitle="Tilbagevendende opgaver." />
@@ -1292,8 +1292,8 @@ function IssuesView({ tasks, onToggle, onAdd, onOpenTask, openTaskId, hideClient
               ))}
             </div>
           )}
-          {issues.length > 0   && <TaskGroup label="🔥 Issues"          color="#ef4444" tasks={issues}   onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!hideClient} selectedIds={selectedIds} onSelect={onSelect} />}
-          {requests.length > 0 && <TaskGroup label="📩 Client Requests"  color="#f97316" tasks={requests} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!hideClient} selectedIds={selectedIds} onSelect={onSelect} />}
+          {issues.length > 0   && <TaskGroup label="Issues"         color="#ef4444" tasks={issues}   onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!hideClient} onAddTask={onAdd} selectedIds={selectedIds} onSelect={onSelect} />}
+          {requests.length > 0 && <TaskGroup label="Client Requests" color="#f97316" tasks={requests} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!hideClient} onAddTask={onAdd} selectedIds={selectedIds} onSelect={onSelect} />}
         </>
       )}
     </div>
@@ -1302,7 +1302,7 @@ function IssuesView({ tasks, onToggle, onAdd, onOpenTask, openTaskId, hideClient
 
 // ─── TASKS VIEW ──────────────────────────────────────────────────────────────
 
-function TasksView({ tasks, goals, onToggle, onOpenGoal, onOpenTask, openTaskId, clientFilter, onSetStatus, onSnooze, selectedIds, onSelect }) {
+function TasksView({ tasks, goals, onToggle, onOpenGoal, onOpenTask, openTaskId, clientFilter, onSetStatus, onSnooze, onAddTask, selectedIds, onSelect }) {
   const [groupBy, setGroupBy] = useState("maal");
   const open = tasks.filter((t) => t.status !== "done");
   const done = tasks.filter((t) => t.status === "done");
@@ -1323,72 +1323,73 @@ function TasksView({ tasks, goals, onToggle, onOpenGoal, onOpenTask, openTaskId,
         }
       />
       {groupBy === "board"   && <BoardView tasks={tasks} onOpenTask={onOpenTask} openTaskId={openTaskId} onSetStatus={onSetStatus} />}
-      {groupBy === "maal"    && <><TasksByGoalView tasks={open} goals={goals} onToggle={onToggle} onOpenGoal={onOpenGoal} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} selectedIds={selectedIds} onSelect={onSelect} />{done.length > 0 && <TaskGroup label={`Udført (${done.length})`} color="#b8bfcc" tasks={done} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} collapsed selectedIds={selectedIds} onSelect={onSelect} />}</>}
-      {groupBy === "omraade" && <><TasksByAreaView tasks={open} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} selectedIds={selectedIds} onSelect={onSelect} />{done.length > 0 && <TaskGroup label={`Udført (${done.length})`} color="#b8bfcc" tasks={done} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} collapsed selectedIds={selectedIds} onSelect={onSelect} />}</>}
+      {groupBy === "maal"    && <><TasksByGoalView tasks={open} goals={goals} onToggle={onToggle} onOpenGoal={onOpenGoal} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} onAddTask={onAddTask} selectedIds={selectedIds} onSelect={onSelect} />{done.length > 0 && <TaskGroup label="Udført" color="#b8bfcc" tasks={done} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} collapsed selectedIds={selectedIds} onSelect={onSelect} />}</>}
+      {groupBy === "omraade" && <><TasksByAreaView tasks={open} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} onAddTask={onAddTask} selectedIds={selectedIds} onSelect={onSelect} />{done.length > 0 && <TaskGroup label="Udført" color="#b8bfcc" tasks={done} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={!clientFilter} onSetStatus={onSetStatus} onSnooze={onSnooze} collapsed selectedIds={selectedIds} onSelect={onSelect} />}</>}
     </div>
   );
 }
 
-function TasksByGoalView({ tasks, goals, onToggle, onOpenGoal, onOpenTask, openTaskId, showClient, selectedIds, onSelect }) {
+function TasksByGoalView({ tasks, goals, onToggle, onOpenGoal, onOpenTask, openTaskId, showClient, onAddTask, selectedIds, onSelect }) {
   const withGoal = goals.map((g) => ({ goal: g, tasks: tasks.filter((t) => t.goalId === g.id) })).filter((g) => g.tasks.length > 0);
   const loose = tasks.filter((t) => !t.goalId);
   return (
     <div>
       {withGoal.map(({ goal: g, tasks: gt }) => (
-        <div key={g.id} style={{ marginBottom: 20 }}>
-          <div onClick={() => onOpenGoal(g.id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 10px", cursor: "pointer", borderRadius: 6, marginBottom: 2 }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: g.color, flexShrink: 0 }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#5e6470" }}>{g.title}</span>
-            <span style={{ fontSize: 11, color: "#b8bfcc", marginLeft: "auto" }}>↗</span>
-          </div>
-          {gt.map((t) => <TaskLine key={t.id} task={t} onToggle={onToggle} onOpen={onOpenTask} showClient={showClient} isOpen={openTaskId === t.id} selected={selectedIds?.includes(t.id)} onSelect={onSelect} />)}
-        </div>
+        <TaskGroup key={g.id} label={g.title} color={g.color} tasks={gt} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={showClient} onAddTask={onAddTask} selectedIds={selectedIds} onSelect={onSelect} />
       ))}
-      {loose.length > 0 && <TaskGroup label="Ad hoc" color="#b8bfcc" tasks={loose} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={showClient} selectedIds={selectedIds} onSelect={onSelect} />}
+      {loose.length > 0 && <TaskGroup label="Ad hoc" color="#94a3b8" tasks={loose} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={showClient} onAddTask={onAddTask} selectedIds={selectedIds} onSelect={onSelect} />}
     </div>
   );
 }
 
-function TasksByAreaView({ tasks, onToggle, onOpenTask, openTaskId, showClient, selectedIds, onSelect }) {
+function TasksByAreaView({ tasks, onToggle, onOpenTask, openTaskId, showClient, onAddTask, selectedIds, onSelect }) {
   const grouped = Object.entries(AREAS).map(([key, cfg]) => ({ key, cfg, tasks: tasks.filter((t) => t.area === key) })).filter((g) => g.tasks.length > 0);
   return (
     <div>
       {grouped.map(({ key, cfg, tasks: at }) => (
-        <TaskGroup key={key} label={cfg.label} color={cfg.color} tasks={at} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={showClient} selectedIds={selectedIds} onSelect={onSelect} />
+        <TaskGroup key={key} label={cfg.label} color={cfg.color} tasks={at} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} showClient={showClient} onAddTask={onAddTask} selectedIds={selectedIds} onSelect={onSelect} />
       ))}
     </div>
   );
 }
 
-function TaskGroup({ label, color, tasks, onToggle, onOpenTask, openTaskId, showClient, collapsed: initCollapsed, onSetStatus, onSnooze, selectedIds, onSelect }) {
+function TaskGroup({ label, color, tasks, onToggle, onOpenTask, openTaskId, showClient, collapsed: initCollapsed, onSetStatus, onSnooze, onAddTask, selectedIds, onSelect }) {
   const [open, setOpen] = useState(!initCollapsed);
   return (
     <div style={{ marginBottom: 0 }}>
       {/* Group header row */}
-      <div style={{ display: "flex", alignItems: "center", padding: "10px 12px 10px 8px", borderBottom: "1px solid #f3f4f6", position: "sticky", top: 0, background: "#fff", zIndex: 2 }}>
+      <div style={{ display: "flex", alignItems: "center", padding: "7px 12px 7px 8px", borderBottom: "1px solid #f3f4f6", position: "sticky", top: 0, background: "#fff", zIndex: 2 }}>
         <button onClick={() => setOpen(!open)}
           style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "2px 4px", marginRight: 4 }}>
-          <svg style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.15s", flexShrink: 0 }} width="10" height="10" fill="none" viewBox="0 0 24 24">
+          <svg style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.15s", flexShrink: 0 }} width="9" height="9" fill="none" viewBox="0 0 24 24">
             <path d="M9 18l6-6-6-6" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ width: 10, height: 10, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#111827" }}>{label}</span>
-          <span style={{ fontSize: 11, color: "#9ca3af", background: "#f3f4f6", borderRadius: 99, padding: "1px 7px", fontWeight: 500, minWidth: 20, textAlign: "center" }}>{tasks.length}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: color, letterSpacing: "0.3px" }}>{label}</span>
+          <span style={{ fontSize: 10, color: color, background: color + "18", borderRadius: 99, padding: "1px 7px", fontWeight: 700, minWidth: 20, textAlign: "center" }}>{tasks.length}</span>
         </button>
         <div style={{ flex: 1 }} />
-        {showClient && <span style={{ width: 130, fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>Klient</span>}
-        <span style={{ width: 110, fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>Deadline</span>
-        <span style={{ width: 90, fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>Område</span>
+        {showClient && <span style={{ width: 130, fontSize: 10, color: "#b8bfcc", fontWeight: 600, letterSpacing: "0.3px", textTransform: "uppercase" }}>Klient</span>}
+        <span style={{ width: 110, fontSize: 10, color: "#b8bfcc", fontWeight: 600, letterSpacing: "0.3px", textTransform: "uppercase" }}>Deadline</span>
+        <span style={{ width: 90, fontSize: 10, color: "#b8bfcc", fontWeight: 600, letterSpacing: "0.3px", textTransform: "uppercase" }}>Område</span>
       </div>
-      {open && tasks.map((t, i) => (
+      {open && tasks.map((t) => (
         <div key={t.id} style={{ borderBottom: "1px solid #f9fafb" }}>
           <TaskLine task={t} onToggle={onToggle} onOpen={onOpenTask} showClient={showClient} isOpen={openTaskId === t.id} onSetStatus={onSetStatus} onSnooze={onSnooze} selected={selectedIds?.includes(t.id)} onSelect={onSelect} />
         </div>
       ))}
       {open && tasks.length === 0 && (
-        <div style={{ padding: "12px 52px", fontSize: 12, color: "#9ca3af" }}>Ingen opgaver</div>
+        <div style={{ padding: "10px 52px", fontSize: 12, color: "#b8bfcc" }}>Ingen opgaver</div>
       )}
-      <div style={{ height: 16 }} />
+      {open && onAddTask && (
+        <button onClick={onAddTask}
+          style={{ display: "flex", alignItems: "center", gap: 5, width: "100%", padding: "7px 12px 7px 52px", border: "none", borderBottom: "1px solid #f9fafb", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, color: "#b8bfcc", textAlign: "left", transition: "all 0.1s" }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = color; e.currentTarget.style.background = color + "08"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#b8bfcc"; e.currentTarget.style.background = "none"; }}>
+          <svg width="11" height="11" fill="none" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/></svg>
+          Tilføj opgave
+        </button>
+      )}
+      <div style={{ height: 20 }} />
     </div>
   );
 }
@@ -1573,7 +1574,7 @@ function ClientView({ client, subNav, setSubNav, tasks, goals, allGoals, routine
           {goals.map((g) => { const gt = tasks.filter((t) => t.goalId === g.id); const done = gt.filter((t) => t.status === "done").length; return <GoalRow key={g.id} goal={g} taskCount={gt.length} doneTasks={done} onClick={() => onOpenGoal(g.id)} />; })}
         </div>
       )}
-      {subNav === "opgaver"    && <TasksView tasks={tasks} goals={allGoals} onToggle={onToggle} onOpenGoal={onOpenGoal} onOpenTask={onOpenTask} openTaskId={openTaskId} clientFilter={client} onSetStatus={onSetStatus} />}
+      {subNav === "opgaver"    && <TasksView tasks={tasks} goals={allGoals} onToggle={onToggle} onOpenGoal={onOpenGoal} onOpenTask={onOpenTask} openTaskId={openTaskId} clientFilter={client} onSetStatus={onSetStatus} onAddTask={onAddTask} />}
       {subNav === "google-ads" && <ServiceTasksView tasks={gAds} allTasks={tasks} area="google-ads" goals={allGoals} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} onAddTask={onAddTask} />}
       {subNav === "meta"       && <ServiceTasksView tasks={meta} allTasks={tasks} area="meta" goals={allGoals} onToggle={onToggle} onOpenTask={onOpenTask} openTaskId={openTaskId} onAddTask={onAddTask} />}
       {subNav === "seo"        && <SeoView pages={seoPages} onUpdate={onUpdateSeoPage} onAddEntry={onAddSeoPageEntry} onAdd={onAddSeoPage} clientColor={clientColor} />}
