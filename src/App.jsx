@@ -69,7 +69,7 @@ export default function App() {
   const [bulkDate, setBulkDate]         = useState("");
   const [showCal, setShowCal]           = useState(false);
   const [draggingId, setDraggingId]     = useState(null);
-  const [calMonth, setCalMonth]         = useState(() => { const n = new Date(); return { year: n.getFullYear(), month: n.getMonth() }; });
+  const [calDate, setCalDate]           = useState(() => new Date());
 
   const toggleSelect = (id) => setSelectedIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
   const clearSelection = () => setSelectedIds([]);
@@ -294,7 +294,7 @@ export default function App() {
           <button onClick={() => setShowCal(v => !v)}
             style={{ width: "100%", background: showCal ? "#eff0ff" : "none", border: showCal ? "none" : "1px solid #e8ecf0", borderRadius: 7, padding: "6px 12px", fontSize: 12, fontWeight: showCal ? 600 : 400, cursor: "pointer", fontFamily: "inherit", color: showCal ? "#4f46e5" : "#9ca3af", textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
-            Kalender-panel
+            Dagsplan
           </button>
         </div>
       </aside>
@@ -405,14 +405,13 @@ export default function App() {
           />
         )}
 
-        {/* ── CALENDAR PANEL ── */}
+        {/* ── DAY PLAN PANEL ── */}
         {showCal && (
-          <CalendarPanel
+          <DayPlanPanel
             tasks={tasks}
-            month={calMonth}
-            onChangeMonth={setCalMonth}
-            onDropTask={(taskId, date) => updateTask(taskId, { due: date })}
-            onOpenTask={setOpenTaskId}
+            date={calDate}
+            onChangeDate={setCalDate}
+            onScheduleTask={(taskId, date, hour, half) => updateTask(taskId, { scheduledDate: date, scheduledHour: hour, scheduledHalf: half })}
           />
         )}
       </div>
@@ -1422,89 +1421,134 @@ function TaskGroup({ label, color, tasks, onToggle, onOpenTask, openTaskId, show
   );
 }
 
-// ─── CALENDAR PANEL ──────────────────────────────────────────────────────────
+// ─── DAY PLAN PANEL (Timely-style) ───────────────────────────────────────────
 
-function CalendarPanel({ tasks, month, onChangeMonth, onDropTask, onOpenTask }) {
+const PLAN_START = 7;   // 07:00
+const PLAN_END   = 20;  // 20:00
+const SLOT_H     = 30;  // px per 30-min slot
+
+function DayPlanPanel({ tasks, date, onChangeDate, onScheduleTask }) {
   const { draggingId } = useContext(DragCtx) || {};
   const [dragOver, setDragOver] = useState(null);
-  const { year, month: m } = month;
 
-  const firstDow = new Date(year, m, 1).getDay(); // 0=Sun
-  const startOffset = (firstDow + 6) % 7;         // Mon-first
-  const daysInMonth = new Date(year, m + 1, 0).getDate();
-  const monthLabel = new Date(year, m, 1).toLocaleDateString("da-DK", { month: "long", year: "numeric" });
+  const isoDate = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+  const isToday = new Date().toDateString() === date.toDateString();
+  const nowHour = new Date().getHours();
+  const nowMin  = new Date().getMinutes();
+  const dayLabel = date.toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "short" });
 
-  const prevMonth = () => onChangeMonth(m === 0 ? { year: year - 1, month: 11 } : { year, month: m - 1 });
-  const nextMonth = () => onChangeMonth(m === 11 ? { year: year + 1, month: 0 } : { year, month: m + 1 });
+  const prevDay = () => { const d = new Date(date); d.setDate(d.getDate()-1); onChangeDate(d); };
+  const nextDay = () => { const d = new Date(date); d.setDate(d.getDate()+1); onChangeDate(d); };
+  const goToday = () => onChangeDate(new Date());
 
-  const ds = (d) => `${year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-  const today = new Date();
-  const isToday = (d) => today.getFullYear() === year && today.getMonth() === m && today.getDate() === d;
+  // Build 30-min slots from PLAN_START to PLAN_END
+  const slots = [];
+  for (let h = PLAN_START; h < PLAN_END; h++) {
+    slots.push({ hour: h, half: 0, key: `${h}:0` });
+    slots.push({ hour: h, half: 1, key: `${h}:1` });
+  }
 
-  const cells = [];
-  for (let i = 0; i < startOffset; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  // Tasks scheduled on this day
+  const scheduled = tasks.filter((t) => t.scheduledDate === isoDate && t.scheduledHour != null);
 
-  const dayTasks = (d) => tasks.filter((t) => t.due === ds(d) && t.status !== "done");
+  // Current-time offset (px from top of timeline)
+  const nowOffsetPx = isToday
+    ? ((nowHour - PLAN_START) * 60 + nowMin) / 30 * SLOT_H
+    : null;
 
   return (
-    <div style={{ width: 264, borderLeft: "1px solid #e8ecf0", background: "#fafafa", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", zIndex: 10 }}>
+    <div style={{ width: 272, borderLeft: "1px solid #e8ecf0", background: "#fafafa", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", zIndex: 10 }}>
+
       {/* Header */}
-      <div style={{ padding: "14px 14px 10px", borderBottom: "1px solid #f0f1f3", display: "flex", alignItems: "center", gap: 6 }}>
-        <button onClick={prevMonth} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: "0 4px", lineHeight: 1 }}>‹</button>
-        <span style={{ flex: 1, textAlign: "center", fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>{monthLabel}</span>
-        <button onClick={nextMonth} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: "0 4px", lineHeight: 1 }}>›</button>
+      <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid #f0f1f3", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
+          <button onClick={prevDay} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: "0 5px", lineHeight: 1 }}>‹</button>
+          <span style={{ flex: 1, textAlign: "center", fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>{dayLabel}</span>
+          <button onClick={nextDay} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: "0 5px", lineHeight: 1 }}>›</button>
+        </div>
+        {!isToday && (
+          <button onClick={goToday} style={{ width: "100%", background: "none", border: "1px solid #e8ecf0", borderRadius: 6, padding: "4px 0", fontSize: 11, color: "#6b7280", cursor: "pointer", fontFamily: "inherit" }}>
+            I dag
+          </button>
+        )}
+        {scheduled.length > 0 && (
+          <div style={{ marginTop: 6, fontSize: 10, color: "#9ca3af" }}>
+            {scheduled.length} opgave{scheduled.length !== 1 ? "r" : ""} planlagt
+          </div>
+        )}
       </div>
 
-      {/* Day-of-week labels */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "8px 8px 2px" }}>
-        {["M","T","O","T","F","L","S"].map((d, i) => (
-          <div key={i} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, color: "#b8bfcc", letterSpacing: "0.3px", padding: "3px 0" }}>{d}</div>
-        ))}
-      </div>
+      {/* Timeline */}
+      <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
+        <div style={{ position: "relative" }}>
+          {slots.map((slot) => {
+            const isHour = slot.half === 0;
+            const isDragOver = dragOver === slot.key && !!draggingId;
+            const slotTasks = scheduled.filter((t) => t.scheduledHour === slot.hour && (t.scheduledHalf || 0) === slot.half);
 
-      {/* Days grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "0 8px 8px", gap: 2, flex: 1, alignContent: "start", overflowY: "auto" }}>
-        {cells.map((d, i) => {
-          if (!d) return <div key={i} />;
-          const date = ds(d);
-          const isDragOver = dragOver === date && !!draggingId;
-          const todayDay = isToday(d);
-          const dt = dayTasks(d);
+            return (
+              <div key={slot.key}
+                onDragOver={(e) => { if (draggingId) { e.preventDefault(); setDragOver(slot.key); }}}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={(e) => { e.preventDefault(); if (draggingId) { onScheduleTask(draggingId, isoDate, slot.hour, slot.half); setDragOver(null); }}}
+                style={{
+                  height: SLOT_H, display: "flex", alignItems: "stretch",
+                  borderTop: isHour ? "1px solid #e8ecf0" : "1px dashed #f3f4f6",
+                  background: isDragOver ? "#ede9fe" : "transparent",
+                  transition: "background 0.08s", cursor: draggingId ? "copy" : "default",
+                  position: "relative", boxSizing: "border-box"
+                }}>
+                {/* Time label */}
+                <div style={{ width: 38, flexShrink: 0, paddingTop: 4, paddingLeft: 8, fontSize: 9, fontWeight: 600, color: isHour ? "#9ca3af" : "transparent", letterSpacing: "0.3px", lineHeight: 1 }}>
+                  {isHour ? `${String(slot.hour).padStart(2,"0")}:00` : ""}
+                </div>
 
-          return (
-            <div key={i}
-              onDragOver={(e) => { if (draggingId) { e.preventDefault(); setDragOver(date); }}}
-              onDragLeave={() => setDragOver(null)}
-              onDrop={(e) => { e.preventDefault(); if (draggingId) { onDropTask(draggingId, date); setDragOver(null); }}}
-              style={{
-                minHeight: 38, padding: "3px 2px 4px", borderRadius: 6, cursor: draggingId ? "copy" : "default",
-                background: isDragOver ? "#ede9fe" : "transparent",
-                border: isDragOver ? "1.5px dashed #6366f1" : "1.5px solid transparent",
-                transition: "all 0.08s", boxSizing: "border-box"
-              }}>
-              <div style={{
-                width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 3px",
-                background: todayDay ? "#4f46e5" : "transparent",
-                fontSize: 11, fontWeight: todayDay ? 700 : 400,
-                color: todayDay ? "#fff" : isDragOver ? "#4f46e5" : "#374151"
-              }}>{d}</div>
-              {dt.slice(0, 3).map((t) => (
-                <div key={t.id}
-                  onClick={() => onOpenTask(t.id)}
-                  title={t.title}
-                  style={{ width: "100%", height: 3, borderRadius: 2, marginBottom: 2, background: AREAS[t.area]?.color || "#6366f1", cursor: "pointer", opacity: 0.8 }} />
-              ))}
-              {dt.length > 3 && <div style={{ fontSize: 8, color: "#9ca3af", textAlign: "center", lineHeight: 1.2 }}>+{dt.length - 3}</div>}
+                {/* Drop zone with task blocks */}
+                <div style={{ flex: 1, position: "relative", paddingRight: 6 }}>
+                  {isDragOver && <div style={{ position: "absolute", inset: "2px 4px 2px 0", borderRadius: 5, border: "1.5px dashed #6366f1", background: "#ede9fe30" }} />}
+                  {slotTasks.map((t, idx) => {
+                    const color = AREAS[t.area]?.color || "#6366f1";
+                    return (
+                      <div key={t.id}
+                        title={t.title}
+                        style={{
+                          position: "absolute",
+                          top: 2, bottom: 2,
+                          left: idx * 4,
+                          right: 0,
+                          background: color,
+                          borderRadius: 5,
+                          padding: "3px 7px",
+                          fontSize: 10, fontWeight: 600, color: "#fff",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+                          zIndex: idx + 1,
+                          cursor: "default",
+                          opacity: t.status === "done" ? 0.45 : 1,
+                        }}>
+                        {t.title}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Current time indicator */}
+          {nowOffsetPx != null && nowOffsetPx > 0 && nowOffsetPx < (PLAN_END - PLAN_START) * 2 * SLOT_H && (
+            <div style={{ position: "absolute", left: 0, right: 0, top: nowOffsetPx, zIndex: 20, pointerEvents: "none", display: "flex", alignItems: "center" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", marginLeft: 32, flexShrink: 0 }} />
+              <div style={{ flex: 1, height: 1, background: "#ef4444", opacity: 0.7 }} />
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
 
-      {/* Task list for selected (drag hint) */}
+      {/* Drag hint */}
       {draggingId && (
-        <div style={{ padding: "10px 14px", borderTop: "1px solid #f0f1f3", background: "#f0f0ff" }}>
-          <p style={{ margin: 0, fontSize: 11, color: "#4f46e5", fontWeight: 600 }}>Slip på en dag for at sætte deadline</p>
+        <div style={{ padding: "9px 14px", borderTop: "1px solid #f0f1f3", background: "#eff0ff", flexShrink: 0 }}>
+          <p style={{ margin: 0, fontSize: 11, color: "#4f46e5", fontWeight: 600 }}>Slip på et tidspunkt for at planlægge</p>
         </div>
       )}
     </div>
