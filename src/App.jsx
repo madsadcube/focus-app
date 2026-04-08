@@ -1448,8 +1448,8 @@ function TaskGroup({ label, color, tasks, onToggle, onOpenTask, openTaskId, show
 
 const PLAN_START   = 7;   // 07:00
 const PLAN_END     = 21;  // 21:00
-const SLOT_H       = 32;  // px per 30-min slot
-const LABEL_W      = 42;  // px for time labels
+const SLOT_H       = 40;  // px per 30-min slot
+const LABEL_W      = 48;  // px for time labels
 const TOTAL_SLOTS  = (PLAN_END - PLAN_START) * 2;
 
 function DayPlanPanel({ tasks, date, onChangeDate, onScheduleTask, onUpdateTask }) {
@@ -1542,7 +1542,7 @@ function DayPlanPanel({ tasks, date, onChangeDate, onScheduleTask, onUpdateTask 
   const nowPx = isToday ? ((now.getHours() - PLAN_START) * 60 + now.getMinutes()) / 30 * SLOT_H : null;
 
   return (
-    <div style={{ width: 340, borderLeft: "1px solid #e8ecf0", background: "#fafafa", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", zIndex: 10 }}>
+    <div style={{ width: 480, borderLeft: "1px solid #e8ecf0", background: "#fafafa", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", zIndex: 10 }}>
 
       {/* ── Header ── */}
       <div style={{ padding: "12px 14px 8px", borderBottom: "1px solid #f0f1f3", flexShrink: 0 }}>
