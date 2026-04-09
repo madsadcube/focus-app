@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, useRef } from "react";
-import { AREAS, FLAGS, STATUSES, OWN_COMPANIES, CLIENTS, ALL_WORKSPACES, INIT_GOALS, INIT_TASKS, INIT_ROUTINES, INIT_SEO_PAGES, INIT_RETAINERS, INIT_PROJECTS } from "./data.js";
+import { AREAS, FLAGS, STATUSES, OWN_COMPANIES, CLIENTS, ALL_WORKSPACES, INIT_GOALS, INIT_TASKS, INIT_ROUTINES, INIT_SEO_PAGES, INIT_RETAINERS, INIT_PROJECTS, INIT_IDEAS } from "./data.js";
 
 const DragCtx = createContext(null);
 
@@ -39,6 +39,7 @@ export default function App() {
   const [clientSubNav, setClientSubNav] = useState("issues");
   const [goals, setGoals]               = useState(INIT_GOALS);
   const [projects, setProjects]         = useState(INIT_PROJECTS);
+  const [ideas, setIdeas]               = useState(INIT_IDEAS);
   const [tasks, setTasks]               = useState(INIT_TASKS);
   const [routines, setRoutines]         = useState(INIT_ROUTINES);
   const [seoPages, setSeoPages]         = useState(INIT_SEO_PAGES);
@@ -219,6 +220,7 @@ export default function App() {
     { key: "opgaver",  label: "Alle opgaver", icon: <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
     { key: "rutiner",  label: "Rutiner",      icon: <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
     { key: "retainer", label: "Retainer",     icon: <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    { key: "ideer",    label: "Ideer",        icon: <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M12 2a7 7 0 015.292 11.647A4 4 0 0115 17v1a2 2 0 01-2 2h-2a2 2 0 01-2-2v-1a4 4 0 01-2.292-3.353A7 7 0 0112 2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M9 21h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> },
   ];
 
   return (
@@ -356,6 +358,9 @@ export default function App() {
               )}
               {nav === "retainer" && (
                 <RetainerView retainers={retainers} tasks={tasks} onUpdate={updateRetainer} onAddExpense={addExpense} onDeleteExpense={deleteExpense} />
+              )}
+              {nav === "ideer" && (
+                <IdeasView ideas={ideas} onAdd={(idea) => setIdeas((p) => [{ id: Date.now(), createdAt: new Date().toISOString().slice(0,10), ...idea }, ...p])} onUpdate={(id, changes) => setIdeas((p) => p.map((i) => i.id === id ? { ...i, ...changes } : i))} onDelete={(id) => setIdeas((p) => p.filter((i) => i.id !== id))} />
               )}
             </div>
           )}
@@ -2471,6 +2476,161 @@ const EXPENSE_CATS = {
   ads:       { label: "Annoncer", color: "#f97316" },
   other:     { label: "Andet",    color: "#94a3b8" },
 };
+
+// ─── IDEAS VIEW ──────────────────────────────────────────────────────────────
+
+const IDEA_STATUSES = {
+  ny:       { label: "Ny",       color: "#6366f1", bg: "#eff0ff" },
+  vurderer: { label: "Vurderer", color: "#f59e0b", bg: "#fffbeb" },
+  bygger:   { label: "Bygger",   color: "#10b981", bg: "#f0fdf4" },
+  parkeret: { label: "Parkeret", color: "#94a3b8", bg: "#f3f4f6" },
+};
+
+function IdeasView({ ideas, onAdd, onUpdate, onDelete }) {
+  const [title, setTitle]       = useState("");
+  const [desc, setDesc]         = useState("");
+  const [adding, setAdding]     = useState(false);
+  const [editId, setEditId]     = useState(null);
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  const handleAdd = () => {
+    if (!title.trim()) return;
+    onAdd({ title: title.trim(), description: desc.trim(), status: "ny", tags: [] });
+    setTitle(""); setDesc(""); setAdding(false);
+  };
+
+  const filtered = filterStatus === "all" ? ideas : ideas.filter((i) => i.status === filterStatus);
+  const counts   = Object.fromEntries(Object.keys(IDEA_STATUSES).map((k) => [k, ideas.filter((i) => i.status === k).length]));
+
+  return (
+    <div>
+      <PageHeader title="Ideer" subtitle="Capture ideer hurtigt — evaluer og byg dem efterhånden."
+        right={
+          <button onClick={() => setAdding(true)}
+            style={{ background: "#6366f1", color: "#fff", border: "none", borderRadius: 7, padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+            + Ny idé
+          </button>
+        }
+      />
+
+      {/* Status filter tabs */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 24, flexWrap: "wrap" }}>
+        <button onClick={() => setFilterStatus("all")}
+          style={{ fontSize: 11, fontWeight: 600, borderRadius: 99, padding: "4px 13px", border: "1px solid", cursor: "pointer", fontFamily: "inherit", borderColor: filterStatus === "all" ? "#1e293b" : "#e3e6ea", background: filterStatus === "all" ? "#1e293b" : "#fff", color: filterStatus === "all" ? "#fff" : "#5e6470" }}>
+          Alle <span style={{ opacity: 0.6 }}>{ideas.length}</span>
+        </button>
+        {Object.entries(IDEA_STATUSES).map(([key, s]) => (
+          <button key={key} onClick={() => setFilterStatus(key)}
+            style={{ fontSize: 11, fontWeight: 600, borderRadius: 99, padding: "4px 13px", border: "1px solid", cursor: "pointer", fontFamily: "inherit", borderColor: filterStatus === key ? s.color : "#e3e6ea", background: filterStatus === key ? s.color : "#fff", color: filterStatus === key ? "#fff" : "#5e6470" }}>
+            {s.label} <span style={{ opacity: 0.6 }}>{counts[key] || 0}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Add form */}
+      {adding && (
+        <div style={{ background: "#fff", border: "1.5px solid #6366f1", borderRadius: 12, padding: "16px 18px", marginBottom: 20, boxShadow: "0 2px 12px #6366f115" }}>
+          <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
+            placeholder="Hvad er idéen?"
+            style={{ width: "100%", border: "none", fontSize: 16, fontWeight: 700, fontFamily: "inherit", outline: "none", color: "#1e293b", marginBottom: 10, background: "transparent", boxSizing: "border-box" }}
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
+          <textarea value={desc} onChange={(e) => setDesc(e.target.value)}
+            placeholder="Beskriv idéen lidt mere... (valgfrit)"
+            rows={3}
+            style={{ width: "100%", border: "1px solid #e8ecf0", borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", color: "#374151", resize: "none", padding: "8px 10px", boxSizing: "border-box", lineHeight: 1.6 }} />
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={handleAdd}
+              style={{ background: "#6366f1", color: "#fff", border: "none", borderRadius: 7, padding: "7px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+              Gem idé
+            </button>
+            <button onClick={() => { setAdding(false); setTitle(""); setDesc(""); }}
+              style={{ background: "none", border: "1px solid #e3e6ea", borderRadius: 7, padding: "7px 14px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", color: "#64748b" }}>
+              Annuller
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Ideas list */}
+      {filtered.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 0", color: "#9ca3af" }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>💡</div>
+          <p style={{ fontWeight: 600, marginBottom: 4 }}>Ingen ideer her endnu</p>
+          <p style={{ fontSize: 13 }}>Klik "+ Ny idé" for at starte</p>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {filtered.map((idea) => (
+          <IdeaCard key={idea.id} idea={idea} onUpdate={onUpdate} onDelete={onDelete}
+            isEditing={editId === idea.id} onStartEdit={() => setEditId(idea.id)} onEndEdit={() => setEditId(null)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IdeaCard({ idea, onUpdate, onDelete, isEditing, onStartEdit, onEndEdit }) {
+  const [hover, setHover]       = useState(false);
+  const [editTitle, setEditTitle] = useState(idea.title);
+  const [editDesc, setEditDesc]   = useState(idea.description || "");
+  const s = IDEA_STATUSES[idea.status] || IDEA_STATUSES.ny;
+
+  const saveEdit = () => {
+    onUpdate(idea.id, { title: editTitle.trim() || idea.title, description: editDesc.trim() });
+    onEndEdit();
+  };
+
+  return (
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ background: "#fff", border: "1px solid #e8ecf0", borderRadius: 10, padding: "14px 16px", transition: "box-shadow 0.1s", boxShadow: hover ? "0 2px 10px rgba(0,0,0,0.06)" : "none" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+        {/* Status pill — clickable cycle */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <select value={idea.status} onChange={(e) => onUpdate(idea.id, { status: e.target.value })}
+            style={{ appearance: "none", background: s.bg, color: s.color, border: "none", borderRadius: 99, padding: "3px 10px", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.3px" }}>
+            {Object.entries(IDEA_STATUSES).map(([k, st]) => <option key={k} value={k}>{st.label}</option>)}
+          </select>
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {isEditing ? (
+            <div>
+              <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
+                style={{ width: "100%", border: "none", fontSize: 14, fontWeight: 700, fontFamily: "inherit", outline: "none", color: "#1e293b", marginBottom: 8, background: "transparent", boxSizing: "border-box" }}
+                onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") onEndEdit(); }} />
+              <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={3}
+                style={{ width: "100%", border: "1px solid #e8ecf0", borderRadius: 7, fontSize: 13, fontFamily: "inherit", outline: "none", color: "#374151", resize: "none", padding: "7px 10px", boxSizing: "border-box", lineHeight: 1.6 }} />
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <button onClick={saveEdit} style={{ background: "#6366f1", color: "#fff", border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Gem</button>
+                <button onClick={onEndEdit} style={{ background: "none", border: "1px solid #e3e6ea", borderRadius: 6, padding: "5px 12px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", color: "#64748b" }}>Annuller</button>
+              </div>
+            </div>
+          ) : (
+            <div onClick={onStartEdit} style={{ cursor: "text" }}>
+              <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#1e293b", lineHeight: 1.4 }}>{idea.title}</p>
+              {idea.description && <p style={{ margin: 0, fontSize: 12, color: "#6b7280", lineHeight: 1.6 }}>{idea.description}</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Meta + actions */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          {idea.createdAt && <span style={{ fontSize: 10, color: "#b8bfcc" }}>{idea.createdAt}</span>}
+          {hover && !isEditing && (
+            <button onClick={() => { if (window.confirm("Slet idé?")) onDelete(idea.id); }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#d1d5db", fontSize: 14, lineHeight: 1, padding: "0 2px", borderRadius: 4 }}
+              onMouseEnter={(e) => e.currentTarget.style.color = "#ef4444"}
+              onMouseLeave={(e) => e.currentTarget.style.color = "#d1d5db"}>
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function RetainerView({ retainers, tasks, onUpdate, onAddExpense, onDeleteExpense }) {
   const active = retainers.filter((r) => r.status === "active");

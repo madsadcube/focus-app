@@ -112,3 +112,15 @@ export const INIT_PROJECTS = [
   { id: 1, title: "Webshop launch", client: "Cardirect", color: "#ef4444", status: "active", due: "2026-04-30", description: "ePay integration, produktsider og Google Ads kampagne." },
 ];
 
+// Idea statuses: "ny" | "vurderer" | "bygger" | "parkeret"
+export const INIT_IDEAS = [
+  {
+    id: 1,
+    title: "Facebook → Google Business Profile auto-poster",
+    description: "Hver gang der oprettes et Facebook-opslag, scrapes det automatisk og konverteres til et GBP-post. Sparer tid og sikrer konsistent tilstedeværelse på tværs af platforme.",
+    status: "ny",
+    tags: ["automation", "GBP", "Facebook"],
+    createdAt: "2026-04-09",
+  },
+];
+
